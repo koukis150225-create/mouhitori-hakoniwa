@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="箱庭">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eceff6">
 <title>もうひとりの箱庭</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -193,6 +201,14 @@ form#diary{padding:12px 22px 18px;display:flex;flex-direction:column;gap:12px;bo
   background:var(--ink);color:var(--bg);padding:8px 8px 8px 14px;border-radius:14px;font-size:13px;font-weight:700}
 #visit button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
 form#diary.locked{opacity:.45;pointer-events:none}
+@media (display-mode: standalone){ body{padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:var(--bg)} }
+#a2hs{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:60;display:flex;gap:10px;align-items:center;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 10px 30px rgba(30,30,70,.18);font-size:13px;line-height:1.5}
+#a2hs[hidden]{display:none}
+#a2hs img{width:40px;height:40px;border-radius:10px;flex:none}
+#a2hs p{margin:0;flex:1;min-width:0}
+#a2hs svg{width:15px;height:15px;vertical-align:-2px}
+#a2hs button{border:0;background:var(--panel-2);color:var(--ink-soft);border-radius:10px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;flex:none}
 .people{padding:16px 22px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 #pList{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
 .pp{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:12px;background:var(--panel-2);border:1px solid transparent;font:inherit;color:var(--ink);cursor:pointer;text-align:left;width:100%}
@@ -221,6 +237,7 @@ form#diary.locked{opacity:.45;pointer-events:none}
       <button id="zfit">全体</button>
     </div>
     <div id="toast" hidden></div>
+    <div id="a2hs" hidden role="note"><img alt=""><p><b>アプリとして使う</b><br>下の <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="共有"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> から「ホーム画面に追加」</p><button type="button" id="a2hsClose">とじる</button></div>
     <div id="visit" hidden><span id="visitTitle"></span><button id="visitBack" type="button">自分の町に戻る</button></div>
     <div id="room" hidden>
       <div class="room-head"><span class="town" id="roomTitle">部屋の中</span><span class="meta" id="roomMeta"></span></div>
@@ -2752,6 +2769,16 @@ function setupFriends(){
 function pendingRoom(){ let q=null; try{ q=new URLSearchParams(location.search).get('room'); }catch(e){} const c=cleanCode(q||lsGet('mhk-room')||''); return c.length===6?c:null; }
 
 /* ---------------- boot ---------------- */
+/* ---- installable app (home screen) ---- */
+function setupAppMode(){
+  const installable=!!document.querySelector('link[rel="manifest"]');
+  if(installable&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+  const standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const inApp=/MouhitoriApp/.test(navigator.userAgent);
+  if(installable&&ios&&!standalone&&!inApp&&lsGet('mhk-a2hs')!=='x'){ setTimeout(()=>{ $('#a2hs img').src='icon-180.png'; $('#a2hs').hidden=false; },2500); }
+  $('#a2hsClose').onclick=()=>{ $('#a2hs').hidden=true; lsSet('mhk-a2hs','x'); };
+}
 async function boot(){
   syncWalkers(); renderUI(); setStoreNote('読み込み中…');
   requestAnimationFrame(frame); requestAnimationFrame(pvLoop); requestAnimationFrame(chipLoop);
@@ -2775,6 +2802,7 @@ async function boot(){
   setupFriends();
   const pr=pendingRoom(); if(pr && data && data.town){ joinRoom(pr); if(/[?&]room=/.test(location.search||'')) setTimeout(()=>$('#friends').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}),800); }
   ready=true; setStoreNote(); updateAiNote();
+  setupAppMode();
 }
 boot();
 })();
