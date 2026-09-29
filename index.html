@@ -205,6 +205,11 @@ form#diary.locked{opacity:.45;pointer-events:none}
 #a2hs{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:60;display:flex;gap:10px;align-items:center;
   background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 10px 30px rgba(30,30,70,.18);font-size:13px;line-height:1.5}
 #a2hs[hidden]{display:none}
+#upd{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top,0px));z-index:61;display:flex;gap:10px;align-items:center;
+  background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 12px;box-shadow:0 10px 30px rgba(30,30,70,.25);font-size:13px;line-height:1.5}
+#upd[hidden]{display:none}
+#upd p{margin:0;flex:1;min-width:0}
+#upd button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:8px 12px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;flex:none}
 #a2hs img{width:40px;height:40px;border-radius:10px;flex:none}
 #a2hs p{margin:0;flex:1;min-width:0}
 #a2hs svg{width:15px;height:15px;vertical-align:-2px}
@@ -237,6 +242,7 @@ form#diary.locked{opacity:.45;pointer-events:none}
       <button id="zfit">全体</button>
     </div>
     <div id="toast" hidden></div>
+    <div id="upd" hidden role="status"><p><b>新しい版があります</b><br>更新すると「みんなの町」などの新機能が使えます</p><button type="button" id="updGo">更新する</button></div>
     <div id="a2hs" hidden role="note"><img alt=""><p><b>アプリとして使う</b><br>下の <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="共有"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> から「ホーム画面に追加」</p><button type="button" id="a2hsClose">とじる</button></div>
     <div id="visit" hidden><span id="visitTitle"></span><button id="visitBack" type="button">自分の町に戻る</button></div>
     <div id="room" hidden>
@@ -2267,7 +2273,7 @@ function frame(){
     if(room){ updateRoom(dt,t); drawRoom(t); requestAnimationFrame(frame); return; }
     // camera
     const b=islandBounds(); const bw=b.x1-b.x0, bh=b.y1-b.y0;
-    const fit=Math.max(0.45,Math.min(2.4,Math.min((W-32)/bw,(H-110)/bh)));
+    const fit=Math.max(SHARED?0.12:0.45,Math.min(2.4,Math.min((W-32)/bw,(H-110)/bh)));
     cam.ts=fit*cam.zoom;
     if(cam.focus){ const [fx,fy]=P(cam.focus.x,cam.focus.y); cam.tx=fx; cam.ty=fy-18; }
     else { cam.tx=(b.x0+b.x1)/2; cam.ty=(b.y0+b.y1)/2+12; }
@@ -2606,6 +2612,7 @@ const QR = (() => {
 // Each phone publishes a small snapshot (avatar + town, never the diary text) to a room named by
 // the invite code. Friends in the same room appear in each other's towns and can trade stamps.
 const PUBLIC_URL='https://koukis150225-create.github.io/mouhitori-hakoniwa/';
+const APP_VERSION='2026.09.29c';
 const BROKER='wss://broker.emqx.io:8084/mqtt';
 const MQTT_SRC=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -2669,7 +2676,7 @@ function publishProfile(now_){
   if(!NET.client||!NET.code) return;
   clearTimeout(NET.pubTimer);
   const go=()=>{ const T=mineS(); const last=E[E.length-1];
-    const msg={v:1,uid:NET.uid,name:T.avatar.name,look:T.avatar,townName:T.townName,eps:E.length,pop:T.residents.length,
+    const msg={v:1,app:APP_VERSION,uid:NET.uid,name:T.avatar.name,look:T.avatar,townName:T.townName,eps:E.length,pop:T.residents.length,
       last:last?{label:last.label,mood:last.mood,t:last.date}:null,town:townSnapshot(T),t:Date.now()};
     try{ NET.client.publish(topicBase(NET.code)+'/p/'+NET.uid,JSON.stringify(msg),{retain:true,qos:0}); }catch(e){} };
   if(now_) go(); else NET.pubTimer=setTimeout(go,800);
@@ -2677,6 +2684,7 @@ function publishProfile(now_){
 function sendEvent(ev){ if(!NET.client||NET.state!=='on') { toast('まだつながっていません'); return false; }
   try{ NET.client.publish(topicBase(NET.code)+'/e',JSON.stringify({...ev,from:NET.uid,name:mineS().avatar.name,t:Date.now()}),{qos:0}); return true; }catch(e){ return false; } }
 function onProfile(m){
+  if(m.app&&m.app>APP_VERSION&&document.querySelector('link[rel="manifest"]')) $('#upd').hidden=false;
   const prev=NET.members.get(m.uid);
   NET.members.set(m.uid,m);
   if(prev && m.last && (!prev.last || prev.last.t!==m.last.t)){
@@ -2713,37 +2721,43 @@ function inflateTown(t){ const T=Object.assign(newTown(DEFAULT_AVATAR,''),clone(
 const sharedWanted=()=>lsGet('mhk-shared')!=='0';
 function tileBounds(tiles){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const k in tiles){ const [x,y]=k.split(',').map(Number); if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } return {x0,x1,y0,y1}; }
 function composeShared(){
+  // Everyone (me included) is laid out on the same grid, ordered by id, so every phone
+  // builds the very same world. The grid is then shifted so that my own town sits at the
+  // origin (the diary keeps editing it in place).
   const H=SHARED.home;
+  const people=[{uid:NET.uid,name:H.avatar.name,town:H,me:true},
+    ...[...NET.members.values()].filter(m=>m.town&&m.town.tiles&&Object.keys(m.town.tiles).length).map(m=>({uid:m.uid,name:m.name,town:m.town}))]
+    .sort((a,b)=>a.uid<b.uid?-1:a.uid>b.uid?1:0).slice(0,12);
+  const n=people.length, cols=Math.ceil(Math.sqrt(n));
+  for(const p of people){ p.b=tileBounds(p.town.tiles); p.w=p.b.x1-p.b.x0+1; p.h=p.b.y1-p.b.y0+1; }
+  const GAP=3, CW=Math.max(...people.map(p=>p.w))+GAP, CH=Math.max(...people.map(p=>p.h))+GAP;
+  people.forEach((p,i)=>{ const col=i%cols,row=Math.floor(i/cols);
+    p.dx=col*CW-p.b.x0+Math.floor((CW-GAP-p.w)/2); p.dy=row*CH-p.b.y0+Math.floor((CH-GAP-p.h)/2); p.col=col; p.row=row; });
+  const me=people.find(p=>p.me), ox=me.dx, oy=me.dy;
+  for(const p of people){ p.dx-=ox; p.dy-=oy; }
   const C={...H, tiles:{...H.tiles}, objects:[...H.objects], residents:[...H.residents], pets:[...H.pets], rels:H.rels||(H.rels={}), districts:[], spawn:{}};
-  const hb=tileBounds(H.tiles);
-  const topTile=(tiles,dx=0,dy=0)=>{ let best=null; for(const k in tiles){ const [x,y]=k.split(',').map(Number); if(!best||x+y<best[0]+best[1]) best=[x,y]; } return best?{x:best[0]+dx,y:best[1]+dy}:{x:dx,y:dy}; };
-  C.districts.push({name:`${H.avatar.name}の町`, at:topTile(H.tiles), me:true});
-  const ext={e:hb.x1,s:hb.y1,w:hb.x0,n:hb.y0};
-  const ms=[...NET.members.values()].filter(m=>m.town&&m.town.tiles&&Object.keys(m.town.tiles).length).sort((a,b)=>a.uid<b.uid?-1:1).slice(0,8);
-  const dirs=['e','s','w','n'];
-  ms.forEach((m,i)=>{
-    const T=m.town, b=tileBounds(T.tiles), d=dirs[i%4];
-    const cx=Math.round((hb.x0+hb.x1)/2-(b.x0+b.x1)/2), cy=Math.round((hb.y0+hb.y1)/2-(b.y0+b.y1)/2);
-    let dx,dy; const step={e:[1,0],s:[0,1],w:[-1,0],n:[0,-1]}[d];
-    if(d==='e'){ dx=ext.e+3-b.x0; dy=cy; } else if(d==='s'){ dy=ext.s+3-b.y0; dx=cx; } else if(d==='w'){ dx=ext.w-3-b.x1; dy=cy; } else { dy=ext.n-3-b.y1; dx=cx; }
-    const clash=()=>{ for(const k in T.tiles){ const [x,y]=k.split(',').map(Number); for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++) if(C.tiles[K(x+dx+ox,y+dy+oy)]) return true; } return false; };
-    for(let g=0;g<60&&clash();g++){ dx+=step[0]; dy+=step[1]; }
-    if(d==='e') ext.e=b.x1+dx; else if(d==='s') ext.s=b.y1+dy; else if(d==='w') ext.w=b.x0+dx; else ext.n=b.y0+dy;
-    // join with a path from the nearest walkable tile already in the world
-    const blocked=new Set(C.objects.filter(o=>BLOCK.has(o.kind)).map(o=>K(o.x,o.y)));
-    const oldT=Object.keys(C.tiles).filter(k=>C.tiles[k]!=='w'&&!blocked.has(k)).map(k=>k.split(',').map(Number));
-    const fBlocked=new Set((T.objects||[]).filter(o=>BLOCK.has(o.kind)).map(o=>K(o.x+dx,o.y+dy)));
-    const newT=Object.keys(T.tiles).filter(k=>T.tiles[k]!=='w').map(k=>{ const [x,y]=k.split(',').map(Number); return [x+dx,y+dy]; }).filter(([x,y])=>!fBlocked.has(K(x,y)));
-    for(const k in T.tiles){ const [x,y]=k.split(',').map(Number); C.tiles[K(x+dx,y+dy)]=T.tiles[k]; }
-    let best=null,bd=1e9; for(const a of oldT) for(const q of newT){ const dd=Math.abs(a[0]-q[0])+Math.abs(a[1]-q[1]); if(dd<bd){ bd=dd; best=[a,q]; } }
-    if(best){ let [x,y]=best[0]; const [tx,ty]=best[1]; while(x!==tx){ x+=Math.sign(tx-x); if(!C.tiles[K(x,y)]) C.tiles[K(x,y)]='p'; } while(y!==ty){ y+=Math.sign(ty-y); if(!C.tiles[K(x,y)]) C.tiles[K(x,y)]='p'; } }
-    const own='f:'+m.uid+':';
-    for(const o of T.objects||[]) C.objects.push({...o,id:own+o.id,x:o.x+dx,y:o.y+dy,owner:m.uid,ownerName:m.name});
-    for(const r of T.residents||[]) C.residents.push({...r,id:own+r.id,x:r.x+dx,y:r.y+dy,foreign:m.uid});
-    for(const p of T.pets||[]) C.pets.push({...p,id:own+p.id,x:p.x+dx,y:p.y+dy});
-    C.spawn['g:'+m.uid]={x:(b.x0+b.x1)/2+dx+0.5, y:(b.y0+b.y1)/2+dy+0.5};
-    C.districts.push({name:`${m.name}の町`, at:topTile(T.tiles,dx,dy), uid:m.uid});
-  });
+  const topTile=p=>{ let best=null; for(const k in p.town.tiles){ const [x,y]=k.split(',').map(Number); if(!best||x+y<best[0]+best[1]) best=[x,y]; } return {x:best[0]+p.dx,y:best[1]+p.dy}; };
+  const walkTiles=p=>{ const bl=new Set((p.town.objects||[]).filter(o=>BLOCK.has(o.kind)).map(o=>K(o.x,o.y)));
+    return Object.keys(p.town.tiles).filter(k=>p.town.tiles[k]!=='w'&&!bl.has(k)).map(k=>{ const [x,y]=k.split(',').map(Number); return [x+p.dx,y+p.dy]; }); };
+  for(const p of people){
+    if(!p.me){
+      const T=p.town, own='f:'+p.uid+':';
+      for(const k in T.tiles){ const [x,y]=k.split(',').map(Number); C.tiles[K(x+p.dx,y+p.dy)]=T.tiles[k]; }
+      for(const o of T.objects||[]) C.objects.push({...o,id:own+o.id,x:o.x+p.dx,y:o.y+p.dy,owner:p.uid,ownerName:p.name});
+      for(const r of T.residents||[]) C.residents.push({...r,id:own+r.id,x:r.x+p.dx,y:r.y+p.dy,foreign:p.uid});
+      for(const q of T.pets||[]) C.pets.push({...q,id:own+q.id,x:q.x+p.dx,y:q.y+p.dy});
+      C.spawn['g:'+p.uid]={x:(p.b.x0+p.b.x1)/2+p.dx+0.5, y:(p.b.y0+p.b.y1)/2+p.dy+0.5};
+    }
+    C.districts.push({name:p.me?`${p.name}の町（あなた）`:`${p.name}の町`, at:topTile(p), me:!!p.me, uid:p.uid});
+  }
+  // paths to the neighbour on the right and below (same on every phone)
+  const byCell=new Map(people.map(p=>[p.col+','+p.row,p]));
+  const join=(a,b)=>{ const A=walkTiles(a), B=walkTiles(b); let best=null,bd=1e9;
+    for(const u of A) for(const v of B){ const d=Math.abs(u[0]-v[0])+Math.abs(u[1]-v[1]); if(d<bd){ bd=d; best=[u,v]; } }
+    if(!best) return; let [x,y]=best[0]; const [tx,ty]=best[1];
+    while(x!==tx){ x+=Math.sign(tx-x); if(!C.tiles[K(x,y)]) C.tiles[K(x,y)]='p'; }
+    while(y!==ty){ y+=Math.sign(ty-y); if(!C.tiles[K(x,y)]) C.tiles[K(x,y)]='p'; } };
+  for(const p of people){ const r=byCell.get((p.col+1)+','+p.row), d=byCell.get(p.col+','+(p.row+1)); if(r) join(p,r); if(d) join(p,d); }
   return C;
 }
 function enterShared(){
@@ -2823,7 +2837,7 @@ function renderFriends(){
       <div class="fa">${Object.keys(STAMPS).map(k=>stampBtn(m.uid,k)).join('')}<button class="btn ghost small visit" type="button" data-visit="${m.uid}">町を見に行く</button></div>
       <div class="fq">${QUICK.map(q=>`<button class="chip q" type="button" data-to="${m.uid}" data-msg="${q}">${q}</button>`).join('')}</div></div>`;
     li.querySelector('b').textContent=m.name;
-    li.querySelector('.fm').textContent=`${m.townName} · 第${m.eps}話 · 住人${m.pop}人`;
+    li.querySelector('.fm').textContent=`${m.townName} · 第${m.eps}話 · 住人${m.pop}人`+(m.app===APP_VERSION?'':' · 古い版かも（開き直してね）');
     li.querySelector('.fl').textContent=m.last?`さいきん：${m.last.label}`:'まだ日記はありません';
     drawMini(li.querySelector('canvas'),m.look);
     ul.appendChild(li);
@@ -2861,6 +2875,13 @@ function setupAppMode(){
   const inApp=/MouhitoriApp/.test(navigator.userAgent);
   if(installable&&ios&&!standalone&&!inApp&&lsGet('mhk-a2hs')!=='x'){ setTimeout(()=>{ $('#a2hs img').src='icon-180.png'; $('#a2hs').hidden=false; },2500); }
   $('#a2hsClose').onclick=()=>{ $('#a2hs').hidden=true; lsSet('mhk-a2hs','x'); };
+  $('#updGo').onclick=async()=>{ try{ const rs=await navigator.serviceWorker?.getRegistrations?.(); for(const r of rs||[]) await r.update(); }catch(e){} location.reload(); };
+  if(installable&&/^https?:$/.test(location.protocol)){
+    const check=async()=>{ try{ const t=await fetch('index.html?check='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():''); const m=t.match(/const APP_VERSION='([^']+)'/);
+      if(m&&m[1]!==APP_VERSION&&m[1]>APP_VERSION) $('#upd').hidden=false; }catch(e){} };
+    setTimeout(check,4000); setInterval(check,5*60*1000);
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') check(); });
+  }
 }
 async function boot(){
   syncWalkers(); renderUI(); setStoreNote('読み込み中…');
