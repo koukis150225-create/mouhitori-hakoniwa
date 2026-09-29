@@ -192,7 +192,7 @@ form#diary{padding:12px 22px 18px;display:flex;flex-direction:column;gap:12px;bo
 #visit{position:absolute;left:12px;right:12px;bottom:58px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;
   background:var(--ink);color:var(--bg);padding:8px 8px 8px 14px;border-radius:14px;font-size:13px;font-weight:700}
 #visit button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
-form#diary.locked,form#builder.locked{opacity:.45;pointer-events:none}
+form#diary.locked{opacity:.45;pointer-events:none}
 .people{padding:16px 22px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 #pList{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
 .pp{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:12px;background:var(--panel-2);border:1px solid transparent;font:inherit;color:var(--ink);cursor:pointer;text-align:left;width:100%}
@@ -205,17 +205,6 @@ form#diary.locked,form#builder.locked{opacity:.45;pointer-events:none}
 .pp .pr{font-size:10.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pp.ping{animation:ppPing 1.2s ease 2}
 @keyframes ppPing{50%{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}}
-form#builder{padding:14px 22px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
-.brow{display:flex;gap:8px;align-items:center}
-#bName{flex:1;min-width:0;border:1.5px solid var(--line);background:var(--panel-2);border-radius:12px;padding:9px 12px;font:inherit;font-size:16px;color:var(--ink)}
-#bName:focus{border-color:var(--accent);outline:none}
-#bMic{display:inline-flex;align-items:center;justify-content:center;width:40px;height:38px;padding:0}
-#bMic svg{width:18px;height:18px}
-#bMic.on{background:#e8584a;color:#fff;animation:micPulse 1s ease-in-out infinite}
-@keyframes micPulse{50%{box-shadow:0 0 0 6px rgba(232,88,74,.25)}}
-.bchips{display:flex;flex-wrap:wrap;gap:6px}
-.bchips button{border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);border-radius:999px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}
-.bchips button:hover{color:var(--ink);border-color:var(--accent)}
 @media (prefers-reduced-motion:reduce){ #toast{animation:none} .friend.ping{animation:none} }
 </style>
 </head>
@@ -258,17 +247,6 @@ form#builder{padding:14px 22px 16px;display:flex;flex-direction:column;gap:8px;b
         <button class="btn" id="submit" type="submit">箱庭に書く</button>
         <span class="hint" id="aiNote">行為と気分から、町かアバターが1つ変わります</span>
       </div>
-    </form>
-
-    <form id="builder" autocomplete="off">
-      <label class="lbl" for="bName">建物をすぐ建てる</label>
-      <div class="brow">
-        <input id="bName" maxlength="14" placeholder="例：映画館、灯台、お城、ラーメン屋" enterkeyhint="done">
-        <button class="btn ghost small" id="bMic" type="button" aria-label="声で建物の名前を言う" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
-        <button class="btn small" id="bGo" type="submit">建てる</button>
-      </div>
-      <div class="bchips" id="bChips"></div>
-      <p class="hint" id="bHint">建物の名前を入れると、その場で町に建ちます。どんな名前でもOK（1回で1話ぶん）</p>
     </form>
 
     <div id="result" hidden>
@@ -2424,45 +2402,9 @@ function commitEntry(dec,text,mood){
     renderUI(); renderChip();
     saveTown(); saveEntry(entry);
     if(innerWidth<860) $('#stage').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'});
-    renderBChips();
     return entry;
 }
 
-/* ---- instant builder (type or say a building name) ---- */
-const B_SAMPLES=['映画館','灯台','お城','ラーメン屋','ホテル','温泉','郵便局','時計台','水族館','工場','神社','ケーキ屋'];
-function doBuild(raw){
-  const err=$('#formErr');
-  if(VIEW){ toast('自分の町に戻ってから建ててね'); return; }
-  const d=buildDecision(raw);
-  if(!d){ $('#bHint').textContent='建物の名前を入れてください'; $('#bName').focus(); return; }
-  closeRoom(); err.hidden=true;
-  const keepMood=mood, keepText=$('#text').value;
-  commitEntry({action:d.action,params:d.params,reply:`${d.name}、建ててみたよ！`,via:'build'},`「${d.name}」を建てた`,'');
-  mood=keepMood; $('#text').value=keepText; for(const x of moodsEl.children) x.setAttribute('aria-checked',String(!!mood&&x.textContent===mood));
-  $('#bName').value=''; $('#bHint').textContent=`「${d.name}」が建ちました。建物をタップすると中に入れます`;
-  renderBChips();
-}
-function renderBChips(){
-  const box=$('#bChips'); box.innerHTML='';
-  const have=new Set(S.objects.filter(o=>o.kind==='custom').map(o=>o.name));
-  for(const n of shuffle(B_SAMPLES.filter(n=>!have.has(n))).slice(0,4)){ const b=document.createElement('button'); b.type='button'; b.textContent=n; b.onclick=()=>doBuild(n); box.appendChild(b); }
-}
-$('#builder').addEventListener('submit',ev=>{ ev.preventDefault(); doBuild($('#bName').value); });
-(function setupMic(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return;
-  const btn=$('#bMic'); btn.hidden=false; let rec=null;
-  btn.onclick=()=>{
-    if(rec){ try{rec.stop();}catch(e){} return; }
-    try{ rec=new SR(); }catch(e){ return; }
-    rec.lang='ja-JP'; rec.interimResults=true; rec.maxAlternatives=1; rec.continuous=false;
-    let heard='', failed=false;
-    btn.classList.add('on'); btn.setAttribute('aria-pressed','true'); $('#bHint').textContent='聞いています…建物の名前を言ってください（例：「灯台」）';
-    rec.onresult=e=>{ let s=''; for(const r of e.results) s+=r[0].transcript; heard=s; $('#bName').value=cleanBuildName(s)||s; };
-    rec.onerror=e=>{ failed=true; $('#bHint').textContent= (e.error==='not-allowed'||e.error==='service-not-allowed')?'マイクが使えませんでした。名前を入力して「建てる」を押してください':'うまく聞き取れませんでした。もう一度どうぞ'; };
-    rec.onend=()=>{ rec=null; btn.classList.remove('on'); btn.setAttribute('aria-pressed','false'); if(heard&&!failed) doBuild(heard); };
-    try{ rec.start(); }catch(e){ rec=null; btn.classList.remove('on'); }
-  };
-})();
 $('#undo').onclick=()=>{
   if(!undoInfo)return;
   closeRoom(); clearTimeout(msTimer); S=JSON.parse(undoInfo.prev); E=E.filter(e=>e.id!==undoInfo.id); deleteEntry(undoInfo.id); undoInfo=null;
@@ -2746,7 +2688,7 @@ function visitFriend(uid){
   walkers.clear(); refreshGuests(); syncWalkers(); renderUI();
   cam.focus=null; cam.zoom=1; cam.panX=0; cam.panY=0;
   $('#visit').hidden=false; $('#visitTitle').textContent=`${m.name}の町「${m.townName}」に遊びに来ています`;
-  $('#diary').classList.add('locked'); $('#builder').classList.add('locked'); $('#stage').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'});
+  $('#diary').classList.add('locked'); $('#stage').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'});
   const host=walkers.get('me'); if(host) host.bubble={text:`${mineS().avatar.name}、いらっしゃい！`,until:now()+5};
   const self=walkers.get('g:self'); if(self) self.bubble={text:'おじゃまします！',until:now()+4};
   sendEvent({type:'stamp',to:uid,stamp:'note',msg:'あそびにきたよ'});
@@ -2754,7 +2696,7 @@ function visitFriend(uid){
 function goHome(){
   if(!VIEW) return; closeRoom(); S=VIEW.homeS; VIEW=null;
   walkers.clear(); refreshGuests(); syncWalkers(); renderUI();
-  $('#visit').hidden=true; $('#diary').classList.remove('locked'); $('#builder').classList.remove('locked');
+  $('#visit').hidden=true; $('#diary').classList.remove('locked');
   const me=walkers.get('me'); if(me) me.bubble={text:'ただいま！',until:now()+3};
 }
 
@@ -2830,7 +2772,7 @@ async function boot(){
     S.lastVisit=dayKey();
     openCreator(true);
   }
-  setupFriends(); renderBChips();
+  setupFriends();
   const pr=pendingRoom(); if(pr && data && data.town){ joinRoom(pr); if(/[?&]room=/.test(location.search||'')) setTimeout(()=>$('#friends').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}),800); }
   ready=true; setStoreNote(); updateAiNote();
 }
