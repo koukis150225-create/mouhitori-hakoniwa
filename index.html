@@ -74,6 +74,9 @@ button{cursor:pointer}
   background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:700;font-size:14px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
 @keyframes pop{from{transform:translate(-50%,12px) scale(.9);opacity:0}}
+@media (max-width:859px){ #toast{position:fixed;bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));z-index:70;max-width:calc(100% - 24px)} }
+.stamp.sent,.chip.q.sent{animation:sent .7s ease}
+@keyframes sent{25%{transform:scale(1.22);background:var(--accent);color:var(--accent-ink)}100%{transform:none}}
 
 #panel{background:var(--panel);border-radius:24px;min-height:0;overflow:auto;display:flex;flex-direction:column;
   box-shadow:inset 0 0 0 1px var(--line)}
@@ -151,17 +154,21 @@ form#diary{padding:12px 22px 18px;display:flex;flex-direction:column;gap:12px;bo
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
 @media (max-width:860px){
-  html,body{height:auto}
-  #app{display:flex;flex-direction:column;height:auto;padding-block:12px}
-  #stage{height:min(58svh,540px);min-height:320px}
-  #panel{overflow:visible}
+  /* like a video app: the town stays on top, only the diary below scrolls */
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  body{height:100vh;height:100dvh}
+  #app{display:flex;flex-direction:column;height:100%;padding:8px 8px 0;gap:8px}
+  #stage{flex:none;height:clamp(230px,42dvh,470px);min-height:0;border-radius:20px}
+  .hud{left:10px;top:10px;padding:6px 11px 7px;border-radius:12px} .hud .town{font-size:16px} .hud .meta{font-size:11px} .hud .hint2{display:none}
+  .zoom{right:10px;bottom:10px} .zoom button{min-width:34px;height:34px}
+  #panel{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
   .card .pv{flex-direction:row;gap:14px}
   .card{grid-template-columns:1fr}
   .card .pv{padding:14px}
   .card .pv canvas{width:150px;height:172px}
   .two{grid-template-columns:1fr}
 }
-@media (pointer:coarse){ #world{touch-action:pan-y} }
+
 /* friends */
 .friends{padding:18px 22px 8px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .friends h2,.log h2,.people h2{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--ink-soft);margin:0}
@@ -921,7 +928,7 @@ function chooseNext(w,occ){
   if(Math.random()<0.55){
     const opts=[];
     for(const o of S.objects){ const a=ACTS[o.kind]; if(!a)continue; let wt=typeof a.w==='function'?a.w():a.w;
-      if(w.id==='me'&&a.act==='inside'&&!(o.kind==='home'&&isNight)) wt=0; if(wt>0) opts.push({o,a,wt}); }
+      if(w.id==='me'&&a.act==='inside'&&!(o.kind==='home'&&isNight)) wt=0; if(w.id==='g:self'&&a.act==='inside') wt=0; if(wt>0) opts.push({o,a,wt}); }
     for(const p of walkers.values()) if(p.kind==='pet') opts.push({pet:p,wt:0.8});
     let total=0; for(const op of opts){ const ox=op.o?op.o.x+0.5:op.pet.x, oy=op.o?op.o.y+0.5:op.pet.y; op.wt/=1+Math.hypot(ox-w.x,oy-w.y)*0.3; total+=op.wt; }
     let r=Math.random()*total;
@@ -929,7 +936,7 @@ function chooseNext(w,occ){
       if(op.pet){ const px=Math.floor(op.pet.x),py=Math.floor(op.pet.y);
         for(const [x,y] of shuffle(N4.map(([dx,dy])=>[px+dx,py+dy])).filter(([x,y])=>walkable(x,y,occ))){ const pp=pathTo(w,x,y,occ); if(pp){ w.path=pp; w.goal={act:'crouch',emote:'heart',dur:3.2,face:op.pet,petting:op.pet}; return; } }
         break; }
-      for(const [x,y] of standTiles(op.o,occ)){ const pp=pathTo(w,x,y,occ); if(pp){ let a=op.a; if(['cafe','library','windmill','custom'].includes(op.o.kind)&&Math.random()<0.6) a={...a,act:'inside',dur:[10,18],emote:null}; w.path=pp;
+      for(const [x,y] of standTiles(op.o,occ)){ const pp=pathTo(w,x,y,occ); if(pp){ let a=op.a; if(w.id!=='g:self'&&['cafe','library','windmill','custom'].includes(op.o.kind)&&Math.random()<0.6) a={...a,act:'inside',dur:[10,18],emote:null}; w.path=pp;
         w.goal={act:a.act,emote:typeof a.emote==='function'?a.emote(op.o):a.emote,dur:a.dur[0]+Math.random()*(a.dur[1]-a.dur[0]),obj:op.o,face:{x:op.o.x+0.5,y:op.o.y+0.5}}; return; } }
       break;
     }
@@ -2323,7 +2330,7 @@ function buildRoom(o){
     spot(2.5,2.05,'look',{x:2.5,y:0.6});
   }
   else if(o.kind==='home'){
-    const a=S.avatar, wallc=mix('#ffffff',OUTFIT[a.outfit]||'#7dd0b7',0.28);
+    const HO=homeOwner(o), a=HO.look, wallc=mix('#ffffff',OUTFIT[a.outfit]||'#7dd0b7',0.28);
     R.style={floor:'#d9b48a',pattern:'planks',wall:wallc,cap:shade(wallc,-0.3),deco:'dots',base:'#c79a6b'};
     R.rug={round:true,x:3.4,y:3.6,rx:1.35,c:mix('#ffffff',HAIRC[a.hairColor]||'#7b4a2c',0.35),b:'#fbf7ef'};
     item(0.9+1.5,()=>{ prism(Q,0.15,0.2,0,1.5,0.14,30,'#b07a52'); prism(Q,0.15,0.34,0,1.5,2.2,10,'#b07a52'); prism(Q,0.2,0.38,10,1.4,2.1,7,'#fbf7ef');
@@ -2337,11 +2344,11 @@ function buildRoom(o){
     item(3.3+1.25-0.05,()=>stool(3.3,1.25,'#b07a52'));
     item(-1,()=>bookshelf('y',4.75,5.75,52,seed,'#b07a52')); block(4.7,0,1.1,1);
     R.wall.push(t=>{ wallWindow('L',3.4,4.8,42,90,t,'#f4c7d0');
-      const friends=S.residents.slice(-5); const n=friends.length+1;
-      for(let i=0;i<n;i++){ const lk=i===0?S.avatar:friends[i-1].look; const a0=2.65+i*0.36;
+      const friends=HO.res.slice(-5); const n=friends.length+1;
+      for(let i=0;i<n;i++){ const lk=i===0?HO.look:friends[i-1].look; const a0=2.65+i*0.36;
         frame2('R',a0,a0+0.3,58+(i%2)*8,78+(i%2)*8,'#fdf6e8',()=>{ circ(0,1.5,3.6,SKIN[lk.skin]||SKIN.fair); ctx.beginPath(); ctx.arc(0,0.5,4,Math.PI,0); ctx.fillStyle=HAIRC[lk.hairColor]||'#7b4a2c'; ctx.fill(); circ(-1.3,2,0.5,'#2d2438'); circ(1.3,2,0.5,'#2d2438'); }); }
       onWall('L',1.6,72,()=>{ rrect(-11,-12,22,24,2,'#fffaf0','#b07a52',1); ctx.fillStyle='#e8584a'; ctx.fillRect(-11,-12,22,6); ctx.fillStyle='#4a3c2c'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.font='700 5px "Zen Maru Gothic",sans-serif'; ctx.fillText('日記',0,-9); ctx.font='700 8px "Zen Maru Gothic",sans-serif'; ctx.fillText(`${E.length}話`,0,3); ctx.textAlign='start'; }); });
+        ctx.font='700 5px "Zen Maru Gothic",sans-serif'; ctx.fillText('日記',0,-9); ctx.font='700 8px "Zen Maru Gothic",sans-serif'; ctx.fillText(`${HO.eps}話`,0,3); ctx.textAlign='start'; }); });
     item(5.3+5.2,()=>plant(5.3,5.25,1)); block(5,5,1,1);
     spot(0.95,1.7,'sit',{x:3,y:3},17); spot(3.3,1.25,'sit-read',{x:3.3,y:0.4},11); spot(1.0,4.1,'look',{x:0,y:4.1}); spot(3.4,3.7,'look',{x:3,y:6});
   }
@@ -2402,7 +2409,9 @@ function closeRoom(){ room=null; $('#stage').classList.remove('inroom'); $('#roo
 function nameOf(w){ if(w.id==='me') return S.avatar.name; if(w.guest) return w.gname||'友だち'; const r=S.residents.find(x=>x.id===w.id); return r?dispName(r):'住人'; }
 function updateRoomMeta(){ if(!room)return; const n=room.iw.filter(i=>!i.fixed).length; const staffTxt=room.o.kind==='custom'?placeInfo(room.o).staff:{library:'司書さん',cafe:'店員さん',house:'家族',windmill:'粉ひきさん'}[room.o.kind];
   $('#roomMeta').textContent= (n?`いま中にいる人 ${n}人`:'いまは誰も来ていません')+(staffTxt?` · ${staffTxt}がいます`:'');
-  $('#roomCall').textContent= room.o.kind==='home'?`${S.avatar.name}を呼ぶ`:'だれかを呼ぶ'; }
+  $('#roomCall').textContent= room.o.kind==='home'?`${homeOwner(room.o).name}を呼ぶ`:'だれかを呼ぶ'; }
+function homeOwner(o){ if(o&&o.owner){ const m=NET.members.get(o.owner)||{}; return {look:m.look||S.avatar,name:o.ownerName||m.name||'友だち',walker:'g:'+o.owner,eps:m.eps||0,res:S.residents.filter(r=>r.foreign===o.owner)}; }
+  return {look:S.avatar,name:S.avatar.name,walker:'me',eps:VIEW?(VIEW.eps||0):E.length,res:S.residents.filter(r=>!r.foreign)}; }
 function faceTo(iw,f){ if(!f)return; const sdx=(f.x-f.y)-(iw.x-iw.y); if(Math.abs(sdx)>0.05) iw.dirX=sdx<0?-1:1; }
 function syncRoom(){
   const inside=[...walkers.values()].filter(w=>w.mode==='inside'&&w.insideId===room.o.id);
@@ -2507,10 +2516,10 @@ function drawRoom(t){
 function roomNote(msg){ if(!room)return; room.note=msg; room.noteUntil=now()+3.2; }
 function callSomeone(){
   if(!room) return; const o=room.o; const occ=occMap();
-  let cand = o.kind==='home' ? [walkers.get('me')] : [...walkers.values()].filter(w=>w.kind==='person'&&w.id!=='me');
+  let cand = o.kind==='home' ? [walkers.get(homeOwner(o).walker)] : [...walkers.values()].filter(w=>w.kind==='person'&&w.id!=='me');
   if(o.kind!=='home'&&!cand.length) cand=[walkers.get('me')];
   cand=cand.filter(w=>w&&!(w.mode==='inside'&&w.insideId===o.id)&&!(w.goal&&w.goal.act==='inside'&&w.goal.obj&&w.goal.obj.id===o.id));
-  if(!cand.length){ roomNote(o.kind==='home'?`${S.avatar.name}はもう家にいます`:'みんなもう中にいます'); return; }
+  if(!cand.length){ roomNote(o.kind==='home'?`${homeOwner(o).name}はもう家にいます`:'みんなもう中にいます'); return; }
   const w=cand[Math.floor(Math.random()*cand.length)]; resetWalker(w);
   for(const [x,y] of standTiles(o,occ)){ const p=pathTo(w,x,y,occ); if(p){ w.path=p; w.goal={act:'inside',obj:o,dur:40,face:{x:o.x+0.5,y:o.y+0.5}}; roomNote(`${nameOf(w)}がこちらに向かっています`); return; } }
   roomNote('入り口までの道がふさがっています');
@@ -2552,9 +2561,10 @@ function frame(){
       else { const w=it.w; if(w.hidden) continue;
         const pose=w.mode==='act'?w.act:''; const [sx,sy]=P(w.x,w.y,tzAt(w.x,w.y)); ctx.save(); ctx.translate(sx,sy-(pose==='sit'?6:0));
         if(w.kind==='pet') drawPet(w,t); else drawPerson(w.look,t,w.moving,w.dirX,w.back,1,w.id==='me'?0:hashStr(w.id)%7,pose);
-        if(w.id==='me'&&!w.emote){ circ(0,-43+Math.sin(t*3)*1.5+(pose==='sit'||pose==='crouch'?4:0),2.4,'#f2a33a'); }
+        if(w.id===(VIEW?'g:self':'me')&&!w.emote){ circ(0,-43+Math.sin(t*3)*1.5+(pose==='sit'||pose==='crouch'?4:0),2.4,'#f2a33a'); }
         else if(!w.emote&&S.rels&&S.rels[w.id]) relBadge(S.rels[w.id].s,t,-44+(pose==='sit'||pose==='crouch'?5:0));
-        if(w.guest&&w.gname){ ctx.font='700 7px "Zen Maru Gothic",sans-serif'; const tw=ctx.measureText(w.gname).width+10; rrect(-tw/2,3,tw,11,5.5,'rgba(43,41,69,.82)'); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(w.gname,0,8.8); ctx.textAlign='start'; }
+        const tagName=w.guest?w.gname:(VIEW&&w.id==='me'?VIEW.name:null), mine=w.id==='g:self';
+        if(tagName){ ctx.font='700 7px "Zen Maru Gothic",sans-serif'; const tw=ctx.measureText(tagName).width+10; rrect(-tw/2,3,tw,11,5.5,mine?'rgba(242,163,58,.95)':'rgba(43,41,69,.82)'); ctx.fillStyle=mine?'#3a2503':'#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(tagName,0,8.8); ctx.textAlign='start'; }
         if(w.emote&&t>=w.emote.t0) drawEmote(w.emote.type,t-w.emote.t0,w.kind==='pet'?-24:(pose==='sit'||pose==='crouch'?-46:-52));
         ctx.restore(); }
     }
@@ -2715,7 +2725,7 @@ const chipCtx=$('#chipCv').getContext('2d');
 function renderChip(){ /* drawn in its own loop */ }
 function chipLoop(){
   const t=now(); const c=chipCtx; c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,104,120);
-  swapCtx(c,()=>{ c.setTransform(2,0,0,2,52,110); drawPerson(S.avatar,t,false,1,false,1.2,0); });
+  swapCtx(c,()=>{ c.setTransform(2,0,0,2,52,110); drawPerson(mineS().avatar,t,false,1,false,1.2,0); });
   requestAnimationFrame(chipLoop);
 }
 function swapCtx(c,fn){ const orig=ctx; ctx=c; try{fn()}finally{ctx=orig} }
@@ -2742,7 +2752,9 @@ function openCreator(first){
   creatorFirst=first; draft={...S.avatar};
   $('#cName').value=draft.name; $('#cTown').value=S.townName;
   $('#crTitle').textContent= first?'もうひとりの自分をつくる':'アバターを着がえる';
-  $('#crLead').textContent= first?'この子があなたの写し。日記を書くたびに、この子と町が育っていきます。':'見た目を整えます。日記とは別なので、町は変わりません。';
+  const inv=first&&pendingRoom();
+  $('#crLead').textContent= inv?`招待コード ${inv} で友だちの部屋に入ります。いつも使っている「箱庭」（ホーム画面のアプリなど）がある人は、そちらを開いて友だち欄にこのコードを入れてください。ここで始めると新しいアバターになります。`
+    : first?'この子があなたの写し。日記を書くたびに、この子と町が育っていきます。':'見た目を整えます。日記とは別なので、町は変わりません。';
   $('#crDone').textContent= first?'この姿で暮らしはじめる':'この姿にする';
   $('#crCancel').hidden=first;
   optGroup($('#oSkin'),Object.entries(SKIN).map(([k,c])=>[k,{light:'あかるい',fair:'ふつう',tan:'こんがり',deep:'ふかい'}[k],c]),'skin','sw');
@@ -2870,7 +2882,7 @@ const QR = (() => {
 // Each phone publishes a small snapshot (avatar + town, never the diary text) to a room named by
 // the invite code. Friends in the same room appear in each other's towns and can trade stamps.
 const PUBLIC_URL='https://koukis150225-create.github.io/mouhitori-hakoniwa/';
-const APP_VERSION='2026.09.29d';
+const APP_VERSION='2026.09.30a';
 const BROKER='wss://broker.emqx.io:8084/mqtt';
 const MQTT_SRC=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -2914,7 +2926,7 @@ async function joinRoom(code){
   client.on('offline',()=>setNetState('connecting','電波をさがしています…'));
   client.on('error',()=>{ if(!everConnected) setNetState('error','この画面からはつながれません。公開版のURLで開いてください'); });
   client.on('message',(topic,buf)=>{ const parts=topic.split('/'); const kind=parts[3], who=parts[4]; const txt=buf.toString();
-    if(kind==='p'){ if(who===NET.uid) return; if(!txt){ NET.members.delete(who); } else { try{ const m=JSON.parse(txt); if(m&&m.uid===who) onProfile(m); }catch(e){} } friendsChanged(); }
+    if(kind==='p'){ if(who===NET.uid) return; if(!txt){ if(NET.members.delete(who)) NET.townDirty=true; } else { try{ const m=JSON.parse(txt); if(m&&m.uid===who) onProfile(m); }catch(e){} } friendsChanged(); }
     else if(kind==='o'){ NET.online.set(who,txt==='1'); friendsChanged(); }
     else if(kind==='e'){ try{ const ev=JSON.parse(txt); if(ev&&ev.from!==NET.uid) onEvent(ev); }catch(e){} } });
 }
@@ -2934,10 +2946,11 @@ function publishProfile(now_){
   if(!NET.client||!NET.code) return;
   clearTimeout(NET.pubTimer);
   const go=()=>{ const T=mineS(); const last=E[E.length-1];
-    const msg={v:1,app:APP_VERSION,uid:NET.uid,name:T.avatar.name,look:T.avatar,townName:T.townName,eps:E.length,pop:T.residents.length,
-      last:last?{label:last.label,mood:last.mood,t:last.date}:null,town:townSnapshot(T),t:Date.now()};
-    try{ NET.client.publish(topicBase(NET.code)+'/p/'+NET.uid,JSON.stringify(msg),{retain:true,qos:0}); }catch(e){} };
-  if(now_) go(); else NET.pubTimer=setTimeout(go,800);
+    const body={v:1,app:APP_VERSION,uid:NET.uid,name:T.avatar.name,look:T.avatar,townName:T.townName,eps:E.length,pop:T.residents.length,
+      last:last?{label:last.label,mood:last.mood,t:last.date}:null,town:townSnapshot(T)};
+    const sig=JSON.stringify(body); if(!now_&&sig===NET.lastPub) return; NET.lastPub=sig;
+    try{ NET.client.publish(topicBase(NET.code)+'/p/'+NET.uid,JSON.stringify({...body,t:Date.now()}),{retain:true,qos:0}); }catch(e){} };
+  if(now_) go(); else NET.pubTimer=setTimeout(go,2500);
 }
 function sendEvent(ev){ if(!NET.client||NET.state!=='on') { toast('まだつながっていません'); return false; }
   try{ NET.client.publish(topicBase(NET.code)+'/e',JSON.stringify({...ev,from:NET.uid,name:mineS().avatar.name,t:Date.now()}),{qos:0}); return true; }catch(e){ return false; } }
@@ -2945,12 +2958,14 @@ function onProfile(m){
   if(m.app&&m.app>APP_VERSION&&document.querySelector('link[rel="manifest"]')) $('#upd').hidden=false;
   const prev=NET.members.get(m.uid);
   NET.members.set(m.uid,m);
+  const townChanged=!prev||JSON.stringify(prev.town)!==JSON.stringify(m.town);
+  if(townChanged) NET.townDirty=true;
   if(prev && m.last && (!prev.last || prev.last.t!==m.last.t)){
     toast(`${m.name}の町：${m.last.label}`);
     const g=walkers.get('g:'+m.uid); if(g){ resetWalker(g); startAct(g,{act:'cheer',dur:3.5,emote:'star',say:m.last.label.slice(0,14)}); }
     const who=[...walkers.values()].filter(w=>w.kind==='person'&&!w.guest&&w.id!=='me'); if(who.length){ const r=pick(Math.random,who); if(!(r.bubble&&r.bubble.until>now())) r.bubble={text:`${m.name}の町、にぎやかだね`,until:now()+3.5}; }
   }
-  if(VIEW&&VIEW.uid===m.uid){ /* keep viewing the latest */ const home=VIEW; S=inflateTown(m.town); VIEW=home; syncWalkers(); renderUI(); }
+  if(VIEW&&VIEW.uid===m.uid&&townChanged){ /* keep viewing the latest, without restarting everyone */ const home=VIEW; S=inflateTown(m.town); VIEW=home; syncWalkers(true); renderUI(); }
 }
 function onEvent(ev){
   if(ev.type==='stamp'){
@@ -2964,7 +2979,7 @@ function onEvent(ev){
   }
 }
 let fcTimer=null;
-function friendsChanged(){ clearTimeout(fcTimer); fcTimer=setTimeout(()=>{ refreshGuests(); if(SHARED) refreshShared(); else maybeShared(); renderFriends(); },250); }
+function friendsChanged(){ clearTimeout(fcTimer); fcTimer=setTimeout(()=>{ refreshGuests(); if(SHARED){ if(NET.townDirty){ NET.townDirty=false; refreshShared(); } } else { NET.townDirty=false; maybeShared(); } renderFriends(); },250); }
 function refreshGuests(){
   const before=guests.map(g=>g.id).join(',');
   if(VIEW){ const h=VIEW.homeS; guests=[{id:'self',name:h.avatar.name,look:h.avatar,self:true}]; }
@@ -3059,7 +3074,7 @@ function visitFriend(uid){
   $('#visit').hidden=false; $('#visitTitle').textContent=`${m.name}の町「${m.townName}」に遊びに来ています`;
   $('#diary').classList.add('locked'); $('#stage').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'});
   const host=walkers.get('me'); if(host) host.bubble={text:`${mineS().avatar.name}、いらっしゃい！`,until:now()+5};
-  const self=walkers.get('g:self'); if(self) self.bubble={text:'おじゃまします！',until:now()+4};
+  const self=walkers.get('g:self'); if(self){ self.bubble={text:'おじゃまします！',until:now()+4}; focusOn({x:self.x,y:self.y}); }
   sendEvent({type:'stamp',to:uid,stamp:'note',msg:'あそびにきたよ'});
 }
 function goHome(){
@@ -3084,25 +3099,25 @@ function renderFriends(){
   $('#frCodeShow').textContent=NET.code; $('#frLink').textContent=inviteLink(NET.code);
   const qc=$('#frQr'); if(qc.dataset.code!==NET.code){ try{ QR.draw(qc,inviteLink(NET.code)); qc.dataset.code=NET.code; }catch(e){} }
   const sb=$('#frShared'); sb.textContent=SHARED?'自分の町だけ見る':'みんなの町を見る'; sb.classList.toggle('ghost',!!SHARED);
-  const ul=$('#frList'); const ms=[...NET.members.values()].sort((a,b)=>b.t-a.t);
-  if(!ms.length){ ul.innerHTML='<li class="empty">まだだれも来ていません。招待コードかQRを友だちに送ってください。</li>'; return; }
-  ul.innerHTML='';
-  for(const m of ms){
-    const li=document.createElement('li'); li.className='friend'; li.id='fr-'+m.uid;
-    const on=NET.online.get(m.uid);
-    li.innerHTML=`<canvas width="72" height="84" aria-hidden="true"></canvas><div class="fi"><div class="fn"><b></b><i class="dot${on?' on':''}" title="${on?'いまアプリを開いています':'いまは閉じています'}"></i></div>
-      <div class="fm"></div><div class="fl"></div>
-      <div class="fa">${Object.keys(STAMPS).map(k=>stampBtn(m.uid,k)).join('')}<button class="btn ghost small visit" type="button" data-visit="${m.uid}">町を見に行く</button></div>
-      <div class="fq">${QUICK.map(q=>`<button class="chip q" type="button" data-to="${m.uid}" data-msg="${q}">${q}</button>`).join('')}</div></div>`;
-    li.querySelector('b').textContent=m.name;
-    li.querySelector('.fm').textContent=`${m.townName} · 第${m.eps}話 · 住人${m.pop}人`+(m.app===APP_VERSION?'':' · 古い版かも（開き直してね）');
-    li.querySelector('.fl').textContent=m.last?`さいきん：${m.last.label}`:'まだ日記はありません';
-    drawMini(li.querySelector('canvas'),m.look);
-    ul.appendChild(li);
-  }
+  const ul=$('#frList'); const ms=[...NET.members.values()].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja')||(a.uid<b.uid?-1:1));
+  if(!ms.length){ ul.innerHTML='<li class="empty">まだだれも来ていません。招待コードかQRを友だちに送ってください。</li>'; ul.dataset.key=''; return; }
+  const key=ms.map(m=>m.uid).join(',');
+  if(ul.dataset.key!==key){ ul.innerHTML=''; ul.dataset.key=key;
+    for(const m of ms){
+      const li=document.createElement('li'); li.className='friend'; li.id='fr-'+m.uid;
+      li.innerHTML=`<canvas width="72" height="84" aria-hidden="true"></canvas><div class="fi"><div class="fn"><b></b><i class="dot"></i></div>
+        <div class="fm"></div><div class="fl"></div>
+        <div class="fa">${Object.keys(STAMPS).map(k=>stampBtn(m.uid,k)).join('')}<button class="btn ghost small visit" type="button" data-visit="${m.uid}">町を見に行く</button></div>
+        <div class="fq">${QUICK.map(q=>`<button class="chip q" type="button" data-to="${m.uid}" data-msg="${q}">${q}</button>`).join('')}</div></div>`;
+      ul.appendChild(li); } }
+  for(const m of ms){ const li=document.getElementById('fr-'+m.uid); if(!li) continue; const on=!!NET.online.get(m.uid);
+    const setT=(sel,v)=>{ const el=li.querySelector(sel); if(el.textContent!==v) el.textContent=v; };
+    setT('b',m.name); setT('.fm',`${m.townName} · 第${m.eps}話 · 住人${m.pop}人`+(m.app===APP_VERSION?'':' · 古い版かも（開き直してね）')); setT('.fl',m.last?`さいきん：${m.last.label}`:'まだ日記はありません');
+    const dot=li.querySelector('.dot'); dot.classList.toggle('on',on); dot.title=on?'いまアプリを開いています':'いまは閉じています';
+    const lk=JSON.stringify(m.look); if(li.dataset.look!==lk){ li.dataset.look=lk; drawMini(li.querySelector('canvas'),m.look); } }
 }
 function sendStamp(to,stamp,msg){
-  if(!sendEvent({type:'stamp',to,stamp,msg:msg||null})) return;
+  if(!sendEvent({type:'stamp',to,stamp,msg:msg||null})){ if(NET.client&&NET.state!=='on') try{ NET.client.reconnect(); }catch(e){} return; }
   const m=NET.members.get(to); toast(`${m?m.name:'友だち'}に「${msg||STAMPS[stamp]}」を送りました`);
   const me=walkers.get(VIEW?'g:self':'me'); if(me){ me.emote={type:stamp,t0:now(),until:now()+3}; if(msg) me.bubble={text:msg,until:now()+3}; }
 }
@@ -3115,6 +3130,7 @@ function setupFriends(){
   $('#frShared').onclick=()=>{ if(SHARED){ lsSet('mhk-shared','0'); leaveShared(false); } else { lsSet('mhk-shared','1'); if(!enterShared()) toast('友だちの町が届いたら、つながります'); } };
   $('#frCopy').onclick=async()=>{ const link=inviteLink(NET.code); const nat=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.share; if(nat){ nat.postMessage(`「もうひとりの箱庭」でいっしょに町をつくろう！招待コード：${NET.code}\n${link}`); return; } try{ await navigator.clipboard.writeText(link); toast('招待リンクをコピーしました'); }catch(e){ const r=document.createRange(); r.selectNodeContents($('#frLink')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast('リンクを選択しました。コピーしてください'); } };
   $('#frList').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.stamp||b.dataset.msg){ b.classList.remove('sent'); void b.offsetWidth; b.classList.add('sent'); }
     if(b.dataset.visit) visitFriend(b.dataset.visit);
     else if(b.dataset.stamp) sendStamp(b.dataset.to,b.dataset.stamp);
     else if(b.dataset.msg) sendStamp(b.dataset.to,'note',b.dataset.msg); });
