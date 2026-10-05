@@ -134,6 +134,7 @@ button{cursor:pointer}
 #stage.fpv .hud,#stage.fpv .zoom{display:none}
 #stage.fpv #rideBar{right:12px;max-width:none;top:12px;bottom:auto}
 @media (max-width:520px){ #stage.fpv #rideBar{padding:6px 8px;gap:6px} #stage.fpv #rideBar .rt span{display:none} }
+@media (max-width:860px){ #stage.fpv{height:clamp(320px,68dvh,640px)} }
 #rideCtl[hidden],#rideDest[hidden],#rideView[hidden]{display:none}
 #rideCtl .tb{padding:7px 11px;min-width:40px;background:var(--panel-2)}
 #rideCtl .tb.on{background:var(--accent);color:var(--accent-ink)}
@@ -336,7 +337,7 @@ form#diary.locked{opacity:.45;pointer-events:none}
       <button id="zfit">全体</button>
     </div>
     <div id="toast" hidden></div>
-    <div id="upd" hidden role="status"><p><b>新しい版があります</b><br>更新すると「みんなの町」などの新機能が使えます</p><button type="button" id="updGo">更新する</button></div>
+    <div id="upd" hidden role="status"><p><b>新しい版があります</b><br>更新すると最新の機能が使えます</p><button type="button" id="updGo">更新する</button></div>
     <div id="a2hs" hidden role="note"><img alt=""><p><b>アプリとして使う</b><br>下の <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="共有"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> から「ホーム画面に追加」</p><button type="button" id="a2hsClose">とじる</button></div>
     <div id="visit" hidden><span id="visitTitle"></span><button id="visitBack" type="button">自分の町に戻る</button></div>
     <div id="rideBar" hidden role="status"><div class="rt"><b id="rideTxt"></b><span id="rideHint"></span></div><span id="rideSpd" hidden>時速 0km</span><span id="rideCtl" hidden><button class="rbtn tb" type="button" data-turn="L" aria-label="次の角で左へ">◀</button><button class="rbtn tb" type="button" data-turn="S" aria-label="まっすぐ">▲</button><button class="rbtn tb" type="button" data-turn="R" aria-label="次の角で右へ">▶</button></span><button class="rbtn" id="rideView" type="button" hidden>上から見る</button><span id="rideDest" hidden></span><button class="rbtn" id="rideGo" type="button">乗る</button><button class="rbtn dark" id="rideOff" type="button" hidden>降りる</button></div>
@@ -2016,7 +2017,7 @@ function rideTick(t){ if(RIDE){ const v=vehicles.get(RIDE.vid), w=walkers.get(RI
 let FPV_ON=(()=>{ try{ return localStorage.getItem('mhk-fpv')!=='0'; }catch(e){ return true; } })();
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const FP={a:null,x:0,y:0,z:0,steer:0,F:600,hor:300,cache:null};
-const EYE={car:0.36,taxi:0.36,ambulance:0.5,firetruck:0.5,truck:0.52,bus:0.62,tram:0.58,bicycle:0.46,motorbike:0.42,boat:0.3};
+const EYE={car:0.5,taxi:0.5,ambulance:0.62,firetruck:0.62,truck:0.64,bus:0.74,tram:0.7,bicycle:0.58,motorbike:0.54,boat:0.42};
 function fpvActive(){ return !!(RIDE&&FPV_ON&&!room&&!FLIGHT&&vehicles.get(RIDE.vid)); }
 function angLerp(a,b,k){ const d=((b-a)%(Math.PI*2)+Math.PI*3)%(Math.PI*2)-Math.PI; return a+d*k; }
 function fpIsland(){ const n=Object.keys(S.tiles).length; if(FP.cache&&FP.cache.n===n&&FP.cache.S===S) return FP.cache;
@@ -2031,7 +2032,7 @@ function fpvCamera(v,t,dt){ const sp=VEH[v.kind];
   const ta=Math.atan2(v.dir[1],v.dir[0]); if(FP.a==null) FP.a=ta; const prev=FP.a; FP.a=angLerp(FP.a,ta,Math.min(1,dt*5));
   const turn=angLerp(0,FP.a-prev,1)/Math.max(dt,0.001); FP.steer+=(Math.max(-1,Math.min(1,turn*0.35))-FP.steer)*Math.min(1,dt*6);
   const bump=v.vel>0.2&&sp.mode==='road'?Math.sin(t*23)*0.006*v.vel:0;
-  FP.x=v.x-Math.cos(FP.a)*0.25; FP.y=v.y-Math.sin(FP.a)*0.25; FP.z=tzAt(v.x,v.y)/36+(EYE[v.kind]||0.5)+bump+(v.kind==='boat'?Math.sin(t*2+v.phase)*0.04:0); }
+  FP.x=v.x-Math.cos(FP.a)*0.45; FP.y=v.y-Math.sin(FP.a)*0.45; FP.z=tzAt(v.x,v.y)/36+(EYE[v.kind]||0.5)+bump+(v.kind==='boat'?Math.sin(t*2+v.phase)*0.04:0); }
 function fpProj(x,y,z){ const dx=x-FP.x, dy=y-FP.y, ca=Math.cos(FP.a), sa=Math.sin(FP.a); return [-dx*sa+dy*ca, dx*ca+dy*sa, z-FP.z]; }
 function fpScr(c){ return [W/2+c[0]/c[1]*FP.F, FP.hor-c[2]/c[1]*FP.F]; }
 function fpPoly(pts,fill,stroke){ const N=0.06, out=[];
@@ -2051,13 +2052,13 @@ function fpBill(wx,wy,wz,fn,minF=0.6){ const c=fpProj(wx,wy,wz); if(c[1]<minF) r
   const s=FP.F/c[1]/52, [sx,sy]=fpScr(c); ctx.save(); ctx.translate(sx,sy); ctx.scale(s,s); fn(); ctx.restore(); }
 function drawFPV(t,dt){
   const v=vehicles.get(RIDE.vid); fpvCamera(v,t,dt); const sp=VEH[v.kind], air=sp.mode==='air';
-  FP.F=Math.min(W*0.62,H*0.95); FP.hor=H*(air?0.3:0.42);
+  FP.F=Math.min(W*0.42,H*0.72); FP.hor=H*(air?0.3:0.4);
   ctx.setTransform(DPR,0,0,DPR,0,0); drawSky(t);
   const sky=isNight?['#141a3c','#353466']:(SKY[S.lastMood]||SKY['']); const skyC=sky[1];
   // the haze below the horizon (the island floats in the sky)
   const g=ctx.createLinearGradient(0,FP.hor,0,H); g.addColorStop(0,skyC); g.addColorStop(1,isNight?'#1c1f44':mix(skyC,'#b8c6e0',0.35)); ctx.fillStyle=g; ctx.fillRect(0,FP.hor,W,H-FP.hor);
   if(typeof drawFarFPV==='function') drawFarFPV(t);
-  const VD=air?46:22, items=[];
+  const VD=air?46:26, items=[];
   for(const k in S.tiles){ const [x,y]=k.split(',').map(Number); const cx=x+0.5, cy=y+0.5, d=Math.hypot(cx-FP.x,cy-FP.y); if(d>VD) continue;
     const c=fpProj(cx,cy,0); if(c[1]<-1.2) continue; if(c[1]>1.5&&Math.abs(c[0])>c[1]*(W/2/FP.F)+1.2) continue;
     items.push({d,tile:{x,y,z:((S.tz&&S.tz[k])||0)/36,type:S.tiles[k]}}); }
@@ -2092,40 +2093,40 @@ function fpWheel(cx,cy,r,rot,col){ ctx.save(); ctx.translate(cx,cy); ctx.rotate(
 function drawCockpit(v,t){ const k=v.kind, col=v.color, steer=FP.steer, dk='#2b2838';
   const pillar=(w,c)=>{ poly([[0,0],[w,0],[w*1.6,H*0.62],[0,H*0.7]],c); poly([[W,0],[W-w,0],[W-w*1.6,H*0.62],[W,H*0.7]],c); };
   if(k==='car'||k==='taxi'||k==='ambulance'||k==='firetruck'||k==='truck'){
-    const roof=k==='car'||k==='taxi'?H*0.06:H*0.09, pc=shade(col,-0.35);
-    ctx.fillStyle=pc; ctx.fillRect(0,0,W,roof); pillar(W*0.06,pc);
+    const roof=k==='car'||k==='taxi'?H*0.035:H*0.05, pc=shade(col,-0.35);
+    ctx.fillStyle=pc; ctx.fillRect(0,0,W,roof); pillar(W*0.03,pc);
     const mirror=[W/2,roof+10]; rrect(mirror[0]-30,mirror[1],60,14,6,'#3a3646'); rrect(mirror[0]-27,mirror[1]+2,54,10,4,mix(SKY[S.lastMood]?SKY[S.lastMood][0]:'#cde6fd','#ffffff',0.3));
-    const dy=H*0.78; ctx.fillStyle=dk; ctx.beginPath(); ctx.moveTo(0,dy-10); ctx.quadraticCurveTo(W/2,dy-34,W,dy-10); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+    const dy=H*0.86; ctx.fillStyle=dk; ctx.beginPath(); ctx.moveTo(0,dy-10); ctx.quadraticCurveTo(W/2,dy-34,W,dy-10); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
     ctx.fillStyle=shade(col,-0.15); ctx.beginPath(); ctx.moveTo(0,dy-10); ctx.quadraticCurveTo(W/2,dy-34,W,dy-10); ctx.lineTo(W,dy-4); ctx.quadraticCurveTo(W/2,dy-28,0,dy-4); ctx.closePath(); ctx.fill();
-    const r=Math.min(W,H)*0.17; fpWheel(W*0.36,H+r*0.25,r,steer*1.6,'#1a1824'); fpGauge(W*0.66,dy+Math.min(40,(H-dy)*0.5),Math.min(34,(H-dy)*0.42),v,t);
+    const r=Math.min(W,H)*0.15; fpWheel(W*0.36,H+r*0.45,r,steer*1.6,'#1a1824'); fpGauge(W*0.66,dy+Math.min(40,(H-dy)*0.5),Math.min(34,(H-dy)*0.42),v,t);
     if(k==='taxi'){ rrect(W*0.52-24,dy-6,48,14,4,'#e8584a'); ctx.fillStyle='#fff'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.fillText('賃走',W*0.52,dy+4); ctx.textAlign='start'; }
     if(k==='ambulance'||k==='firetruck'){ const on=Math.sin(t*12)>0; ctx.globalAlpha=0.25; ctx.fillStyle=on?'#ff3a3a':'#3a6aff'; ctx.fillRect(0,0,W,roof); ctx.globalAlpha=1; } }
   else if(k==='bus'||k==='tram'){ const fc=k==='bus'?shade(col,-0.3):'#3a3d48';
-    ctx.fillStyle=fc; ctx.fillRect(0,0,W,H*0.1); ctx.fillRect(0,0,W*0.035,H); ctx.fillRect(W*0.965,0,W*0.035,H); if(k==='tram') ctx.fillRect(W/2-4,0,8,H*0.72);
-    const dy=H*0.82; ctx.fillStyle=dk; ctx.fillRect(0,dy,W,H-dy); ctx.fillStyle=shade(col,-0.1); ctx.fillRect(0,dy-6,W,6);
-    const sy=H*0.84; rrect(W*0.5-W*0.14,sy,W*0.28,22,4,'#14121c'); ctx.fillStyle='#ffb84a'; ctx.font='700 12px "Zen Maru Gothic",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=fc; ctx.fillRect(0,0,W,H*0.05); ctx.fillRect(0,0,W*0.02,H); ctx.fillRect(W*0.98,0,W*0.02,H); if(k==='tram') ctx.fillRect(W/2-4,0,8,H*0.72);
+    const dy=H*0.88; ctx.fillStyle=dk; ctx.fillRect(0,dy,W,H-dy); ctx.fillStyle=shade(col,-0.1); ctx.fillRect(0,dy-6,W,6);
+    const sy=H*0.89; rrect(W*0.5-W*0.14,sy,W*0.28,22,4,'#14121c'); ctx.fillStyle='#ffb84a'; ctx.font='700 12px "Zen Maru Gothic",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(k==='bus'?`つぎは ${S.townName}`:`${S.townName} ゆき`,W/2,sy+11); ctx.textAlign='start';
-    if(k==='bus'){ const r=Math.min(W,H)*0.2; fpWheel(W*0.3,H+r*0.3,r,steer*1.2,'#1a1824'); }
+    if(k==='bus'){ const r=Math.min(W,H)*0.17; fpWheel(W*0.25,H+r*0.5,r,steer*1.2,'#1a1824'); }
     else { ctx.save(); ctx.translate(W*0.3,dy+20); ctx.rotate(-0.3+Math.min(1,(v.vel||0)/VEH.tram.speed)*0.6); rrect(-4,-30,8,30,3,'#9aa0ab'); circ(0,-30,7,'#e8584a'); ctx.restore(); }
     fpGauge(W*0.68,dy+Math.min(38,(H-dy)*0.5),Math.min(32,(H-dy)*0.42),v,t); }
-  else if(k==='bicycle'||k==='motorbike'){ const y0=H*0.86, sw=steer*W*0.06;
+  else if(k==='bicycle'||k==='motorbike'){ const y0=H*0.9, sw=steer*W*0.06;
     if(k==='motorbike'){ rrect(W/2-38+sw*0.5,y0-36,76,40,18,'#2b2838'); fpGauge(W/2+sw*0.5,y0-14,18,v,t); }
     ctx.strokeStyle=k==='motorbike'?'#3a3646':col; ctx.lineWidth=10; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(W*0.12+sw,y0+14); ctx.quadraticCurveTo(W/2+sw,y0-24,W*0.88+sw,y0+14); ctx.stroke(); ctx.lineCap='butt';
     for(const x of [W*0.12,W*0.88]) rrect(x-16+sw,y0+4,32,22,10,'#2b2630');
     if(k==='bicycle'){ circ(W*0.66+sw,y0-8,9,'#d6d9e0'); circ(W*0.66+sw,y0-8,5,'#b9bec9'); ctx.strokeStyle='rgba(40,40,50,.45)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(W/2,H+H*0.25,H*0.32,Math.PI*1.25,Math.PI*1.75); ctx.stroke(); } }
-  else if(k==='boat'){ const y0=H*0.78; ctx.fillStyle='#9a6a47'; ctx.beginPath(); ctx.moveTo(W*0.08,H); ctx.lineTo(W/2,y0); ctx.lineTo(W*0.92,H); ctx.closePath(); ctx.fill();
+  else if(k==='boat'){ const y0=H*0.86; ctx.fillStyle='#9a6a47'; ctx.beginPath(); ctx.moveTo(W*0.08,H); ctx.lineTo(W/2,y0); ctx.lineTo(W*0.92,H); ctx.closePath(); ctx.fill();
     ctx.fillStyle='#c49a6c'; ctx.beginPath(); ctx.moveTo(W*0.18,H); ctx.lineTo(W/2,y0+14); ctx.lineTo(W*0.82,H); ctx.closePath(); ctx.fill();
     ctx.strokeStyle='#6a4a34'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(W*0.6,H); ctx.lineTo(W*0.62,H*0.05); ctx.stroke(); ctx.fillStyle='rgba(251,251,248,.9)'; ctx.beginPath(); ctx.moveTo(W*0.62,H*0.08); ctx.quadraticCurveTo(W*0.82+Math.sin(t*1.3)*6,H*0.35,W*0.63,H*0.68); ctx.closePath(); ctx.fill(); }
-  else if(k==='airplane'){ ctx.fillStyle='#2b2f3e'; ctx.fillRect(0,0,W,H*0.1); ctx.fillRect(0,0,W*0.07,H); ctx.fillRect(W*0.93,0,W*0.07,H); ctx.fillRect(W/2-5,0,10,H*0.7);
-    const dy=H*0.74; ctx.fillStyle='#232633'; ctx.beginPath(); ctx.moveTo(0,dy); ctx.lineTo(W*0.3,dy-14); ctx.lineTo(W*0.7,dy-14); ctx.lineTo(W,dy); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+  else if(k==='airplane'){ ctx.fillStyle='#2b2f3e'; ctx.fillRect(0,0,W,H*0.05); ctx.fillRect(0,0,W*0.03,H); ctx.fillRect(W*0.97,0,W*0.03,H); ctx.fillRect(W/2-3,0,6,H*0.6);
+    const dy=H*0.82; ctx.fillStyle='#232633'; ctx.beginPath(); ctx.moveTo(0,dy); ctx.lineTo(W*0.3,dy-14); ctx.lineTo(W*0.7,dy-14); ctx.lineTo(W,dy); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
     for(let i=0;i<4;i++){ const cx=W*(0.22+i*0.19), cy=dy+(H-dy)*0.45, r=Math.min(26,(H-dy)*0.32); if(i===1){ fpGauge(cx,cy,r,v,t); continue; } ell(cx,cy,r,r,'#14161f','rgba(255,255,255,.2)',1.2);
       if(i===0){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r-2,0,Math.PI*2); ctx.clip(); ctx.translate(cx,cy); ctx.rotate(-FP.steer); ctx.fillStyle='#5aa0e0'; ctx.fillRect(-r,-r,2*r,r); ctx.fillStyle='#a8764f'; ctx.fillRect(-r,0,2*r,r); ctx.restore(); }
       else { ctx.strokeStyle='#7cf29a'; ctx.lineWidth=1.2; ctx.beginPath(); for(let j=0;j<12;j++){ const xx=cx-r*0.7+j*r*0.13; ctx.lineTo(xx,cy+Math.sin(t*3+j+i)*r*0.3); } ctx.stroke(); } }
     const r=Math.min(W,H)*0.14; ctx.strokeStyle='#14161f'; ctx.lineWidth=r*0.2; ctx.beginPath(); ctx.moveTo(W/2-r,H); ctx.lineTo(W/2-r,H-r*0.5); ctx.lineTo(W/2+r,H-r*0.5); ctx.lineTo(W/2+r,H); ctx.stroke(); }
-  else if(k==='balloon'){ const y0=H*0.84; ctx.fillStyle='#9a6a47'; ctx.fillRect(0,y0,W,H-y0); ctx.strokeStyle='rgba(60,40,25,.45)'; ctx.lineWidth=2;
+  else if(k==='balloon'){ const y0=H*0.9; ctx.fillStyle='#9a6a47'; ctx.fillRect(0,y0,W,H-y0); ctx.strokeStyle='rgba(60,40,25,.45)'; ctx.lineWidth=2;
     for(let x=0;x<W;x+=14){ ctx.beginPath(); ctx.moveTo(x,y0); ctx.lineTo(x+7,H); ctx.stroke(); } ctx.fillStyle='#7a5236'; ctx.fillRect(0,y0-8,W,10);
     ctx.strokeStyle='rgba(80,60,40,.75)'; ctx.lineWidth=2; for(const sx of [0.06,0.94]){ ctx.beginPath(); ctx.moveTo(W*sx,y0-6); ctx.lineTo(W*(sx<0.5?0.2:0.8),0); ctx.stroke(); }
-    ctx.fillStyle=v.color; ctx.beginPath(); ctx.ellipse(W/2,-H*0.25,W*0.6,H*0.32,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.5)'; for(let i=-2;i<=2;i+=2){ ctx.beginPath(); ctx.ellipse(W/2+i*W*0.12,-H*0.25,W*0.05,H*0.32,0,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle=v.color; ctx.beginPath(); ctx.ellipse(W/2,-H*0.3,W*0.6,H*0.32,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.5)'; for(let i=-2;i<=2;i+=2){ ctx.beginPath(); ctx.ellipse(W/2+i*W*0.12,-H*0.25,W*0.05,H*0.32,0,0,Math.PI*2); ctx.fill(); }
     if(Math.sin(t*1.7+v.phase)>0.6){ ell(W/2,H*0.05,10,16,'rgba(255,190,80,.85)'); ell(W/2,H*0.06,5,9,'#fff3c0'); } }
 }
 function fpvTap(mx,my){ const v=vehicles.get(RIDE.vid); if(!v||VEH[v.kind].mode==='air') return false; if(my<=FP.hor+3) return false;
@@ -3979,7 +3980,7 @@ const QR = (() => {
 // Each phone publishes a small snapshot (avatar + town, never the diary text) to a room named by
 // the invite code. Friends in the same room appear in each other's towns and can trade stamps.
 const PUBLIC_URL='https://koukis150225-create.github.io/mouhitori-hakoniwa/';
-const APP_VERSION='2026.10.05a';
+const APP_VERSION='2026.10.05b';
 const BROKER='wss://broker.emqx.io:8084/mqtt';
 const MQTT_SRC=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -4251,8 +4252,14 @@ function setupAppMode(){
   $('#updGo').onclick=async()=>{ try{ const rs=await navigator.serviceWorker?.getRegistrations?.(); for(const r of rs||[]) await r.update(); }catch(e){} location.reload(); };
   if(installable&&/^https?:$/.test(location.protocol)){
     const check=async()=>{ try{ const t=await fetch('index.html?check='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():''); const m=t.match(/const APP_VERSION='([^']+)'/);
-      if(m&&m[1]!==APP_VERSION&&m[1]>APP_VERSION) $('#upd').hidden=false; }catch(e){} };
-    setTimeout(check,4000); setInterval(check,5*60*1000);
+      if(m&&m[1]!==APP_VERSION&&m[1]>APP_VERSION){
+        // opened from the QR code / home screen with an old copy: jump straight to the newest version once
+        const fresh=performance.now()<20000&&!($('#text').value||'').trim()&&!room&&!GAME&&!RIDE;
+        let done=null; try{ done=sessionStorage.getItem('mhk-auto'); }catch(e){}
+        if(fresh&&done!==m[1]){ try{ sessionStorage.setItem('mhk-auto',m[1]); }catch(e){} try{ const rs=await navigator.serviceWorker?.getRegistrations?.(); for(const r of rs||[]) await r.update(); }catch(e){}
+          const u=new URL(location.href); u.searchParams.set('v',m[1]); location.replace(u.toString()); return; }
+        $('#upd').hidden=false; } }catch(e){} };
+    setTimeout(check,600); setInterval(check,5*60*1000);
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') check(); });
   }
 }
