@@ -131,6 +131,24 @@ button{cursor:pointer}
 #rideSpd[hidden],#rideGo[hidden],#rideOff[hidden]{display:none}
 #rideBar .rbtn{padding:7px 12px;font-size:13px}
 #rideCtl{display:flex;gap:4px}
+#rideMode{background:var(--accent);color:var(--accent-ink)}
+#rideMode.on{background:var(--ink);color:var(--bg)}
+#rideMode[hidden]{display:none}
+#stage.manual #rideBar{top:12px;bottom:auto;right:12px;max-width:none}
+#stage.manual .zoom{display:none}
+#stage.manual #toast{bottom:auto;top:96px}
+#drivePad button small{white-space:nowrap}
+#drivePad{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none;z-index:5}
+#drivePad[hidden],#stage.inroom #drivePad{display:none}
+#drivePad button{pointer-events:auto;border:0;border-radius:14px;background:rgba(255,255,255,.82);color:#2b2945;font:inherit;font-weight:700;font-size:18px;box-shadow:0 4px 14px rgba(20,20,50,.22);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+#drivePad button small{font-size:9px;font-weight:700;opacity:.75}
+#drivePad button.press,#drivePad button.on{background:var(--accent);color:var(--accent-ink)}
+#drivePad button[hidden]{display:none}
+#drivePad .dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,48px);gap:4px}
+#drivePad .dpad [data-k=up]{grid-column:2;grid-row:1} #drivePad .dpad [data-k=left]{grid-column:1;grid-row:2} #drivePad .dpad [data-k=right]{grid-column:3;grid-row:2} #drivePad .dpad [data-k=down]{grid-column:2;grid-row:3}
+#drivePad .dx{display:flex;flex-direction:column;gap:6px}
+#drivePad .dx button{width:84px;height:48px;font-size:14px}
+@media (max-width:520px){ #drivePad button small{font-size:7.5px} #stage.manual #toast{top:120px} #drivePad .dpad{grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,40px)} #drivePad .dx button{width:70px;height:42px;font-size:13px} }
 #stage.fpv .hud,#stage.fpv .zoom{display:none}
 #stage.fpv #rideBar{right:12px;max-width:none;top:12px;bottom:auto}
 @media (max-width:520px){ #stage.fpv #rideBar{padding:6px 8px;gap:6px} #stage.fpv #rideBar .rt span{display:none} }
@@ -340,7 +358,8 @@ form#diary.locked{opacity:.45;pointer-events:none}
     <div id="upd" hidden role="status"><p><b>新しい版があります</b><br>更新すると最新の機能が使えます</p><button type="button" id="updGo">更新する</button></div>
     <div id="a2hs" hidden role="note"><img alt=""><p><b>アプリとして使う</b><br>下の <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="共有"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> から「ホーム画面に追加」</p><button type="button" id="a2hsClose">とじる</button></div>
     <div id="visit" hidden><span id="visitTitle"></span><button id="visitBack" type="button">自分の町に戻る</button></div>
-    <div id="rideBar" hidden role="status"><div class="rt"><b id="rideTxt"></b><span id="rideHint"></span></div><span id="rideSpd" hidden>時速 0km</span><span id="rideCtl" hidden><button class="rbtn tb" type="button" data-turn="L" aria-label="次の角で左へ">◀</button><button class="rbtn tb" type="button" data-turn="S" aria-label="まっすぐ">▲</button><button class="rbtn tb" type="button" data-turn="R" aria-label="次の角で右へ">▶</button></span><button class="rbtn" id="rideView" type="button" hidden>上から見る</button><span id="rideDest" hidden></span><button class="rbtn" id="rideGo" type="button">乗る</button><button class="rbtn dark" id="rideOff" type="button" hidden>降りる</button></div>
+    <div id="rideBar" hidden role="status"><div class="rt"><b id="rideTxt"></b><span id="rideHint"></span></div><span id="rideSpd" hidden>時速 0km</span><span id="rideCtl" hidden><button class="rbtn tb" type="button" data-turn="L" aria-label="次の角で左へ">◀</button><button class="rbtn tb" type="button" data-turn="S" aria-label="まっすぐ">▲</button><button class="rbtn tb" type="button" data-turn="R" aria-label="次の角で右へ">▶</button></span><button class="rbtn" id="rideMode" type="button" hidden>操縦する</button><button class="rbtn" id="rideView" type="button" hidden>上から見る</button><span id="rideDest" hidden></span><button class="rbtn" id="rideGo" type="button">乗る</button><button class="rbtn dark" id="rideOff" type="button" hidden>降りる</button></div>
+    <div id="drivePad" hidden><div class="dpad"><button type="button" data-k="up" id="padUp" aria-label="前へ">▲</button><button type="button" data-k="left" aria-label="左">◀</button><button type="button" data-k="right" aria-label="右">▶</button><button type="button" data-k="down" id="padDown" aria-label="止まる">▼</button></div><div class="dx"><button type="button" id="padX1">Uターン</button><button type="button" id="padX2" hidden>減速</button></div></div>
     <div id="game" hidden role="dialog" aria-labelledby="gTitle">
       <div class="g-head"><b id="gTitle"></b><span id="gScore"></span><span id="gBest"></span><button class="rbtn dark" id="gClose" type="button">とじる</button></div>
       <div id="gWrap"><canvas id="gameCv" aria-label="ミニゲーム"></canvas>
@@ -1781,10 +1800,42 @@ function vehNext(v){ const cx=Math.floor(v.x), cy=Math.floor(v.y), z=tzAt(cx,cy)
     if(v.turnPref){ const want=v.turnPref==='L'?[d[1],-d[0]]:v.turnPref==='R'?[-d[1],d[0]]:d; const o=opts.find(([x,y])=>x-cx===want[0]&&y-cy===want[1]); if(o){ v.turnPref=null; setTimeout(setRideBar,0); return o; } }
     if(straight) return straight; }
   return straight&&Math.random()<0.6?straight:(opts.length?opts[Math.floor(Math.random()*opts.length)]:null); }
+/* ---- 操縦モード: drive it yourself (▲ accelerate, ▼ brake, ◀▶ turn), or fly it (▲▼ climb/descend, ◀▶ turn) ---- */
+const DRIVE={up:false,down:false,left:false,right:false,fast:false,slow:false};
+function manualDrive(v,spec,dt,t){ const top=spec.speed;
+  if(DRIVE.down) v.vel=Math.max(0,v.vel-top*2.6*dt); else if(DRIVE.up) v.vel=Math.min(top,v.vel+top*0.8*dt); else v.vel=Math.max(0,v.vel-top*0.3*dt);
+  if(DRIVE.left&&v.turnPref!=='L'){ v.turnPref='L'; setRideBar(); } else if(DRIVE.right&&v.turnPref!=='R'){ v.turnPref='R'; setRideBar(); }
+  if(!v.to){ if(v.vel<0.02&&!DRIVE.up&&!v.uturn) return; const cx=Math.floor(v.x), cy=Math.floor(v.y), z=tzAt(cx,cy), d=v.dir;
+    const opts=N4.map(([dx,dy])=>[cx+dx,cy+dy]).filter(([x,y])=>vehTileOk(v,x,y,z)); const back=[cx-d[0],cy-d[1]]; let n=null;
+    if(v.uturn){ v.uturn=false; n=opts.find(([x,y])=>x===back[0]&&y===back[1])||null; if(n&&v.vel<0.3) v.vel=0.3; }
+    if(!n&&v.turnPref){ const want=v.turnPref==='L'?[d[1],-d[0]]:[-d[1],d[0]]; n=opts.find(([x,y])=>x-cx===want[0]&&y-cy===want[1])||null; if(n){ v.turnPref=null; setRideBar(); } }
+    if(!n) n=opts.find(([x,y])=>x-cx===d[0]&&y-cy===d[1])||null;
+    if(!n){ const fw=opts.filter(([x,y])=>!(x===back[0]&&y===back[1])); if(fw.length===1) n=fw[0]; }
+    if(!n){ v.vel=0; if(!(v.bubble&&v.bubble.until>t)) v.bubble={text:opts.length>1?'◀▶でどっちに曲がる？':'行き止まり！ Uターンしよう',until:t+1.6}; return; }
+    v.from=[cx,cy]; v.to=n; }
+  const tx=v.to[0]+0.5, ty=v.to[1]+0.5;
+  if(spec.mode==='road') for(const w of walkers.values()){ if(w.hidden||w.kind!=='person') continue; if(Math.hypot(w.x-tx,w.y-ty)<0.42&&Math.hypot(w.x-v.x,w.y-v.y)<1.1){ v.vel=0; if(!(v.bubble&&v.bubble.until>t)) v.bubble={text:v.kind==='bicycle'?'チリンチリン':'プップー',until:t+1.2}; return; } }
+  const dx=tx-v.x, dy=ty-v.y, dd=Math.hypot(dx,dy); if(dd>0.01) v.dir=Math.abs(dx)>=Math.abs(dy)?[Math.sign(dx),0]:[0,Math.sign(dy)];
+  const step=v.vel*dt; if(dd<=step){ v.x=tx; v.y=ty; v.to=null; } else { v.x+=dx/dd*step; v.y+=dy/dd*step; }
+  const h=v.hist; if(!h.length||Math.hypot(h[0].x-v.x,h[0].y-v.y)>0.04){ h.unshift({x:v.x,y:v.y,dir:v.dir}); if(h.length>60) h.length=60; } }
+function flyManual(dt){ const F=RIDE.fly, v=vehicles.get(RIDE.vid); if(!F||!v) return; const plane=v.kind==='airplane', c=fpIsland();
+  const st=(DRIVE.right?1:0)-(DRIVE.left?1:0); F.a+=st*(plane?0.9:0.5)*dt; F.steer+=(st*0.35-F.steer)*Math.min(1,dt*4);
+  if(plane) F.vel=Math.max(2,Math.min(8,F.vel+((DRIVE.fast?1:0)-(DRIVE.slow?1:0))*2.5*dt)); else F.vel=0.5+(DRIVE.fast?0.8:0);
+  F.z=Math.max(plane?1.6:1,Math.min(plane?12:8,F.z+((DRIVE.up?1:0)-(DRIVE.down?1:0))*1.6*dt));
+  F.x+=Math.cos(F.a)*F.vel*dt; F.y+=Math.sin(F.a)*F.vel*dt;
+  const dist=Math.hypot(F.x-c.x,F.y-c.y); if(dist>c.r+16){ F.a=angLerp(F.a,Math.atan2(c.y-F.y,c.x-F.x),Math.min(1,dt*0.9)); if(!(F.warn>now())){ F.warn=now()+4; toast('島から遠すぎるので、島のほうへもどります'); } } }
+function setManual(on){ if(!RIDE) return; const v=vehicles.get(RIDE.vid); if(!v) return; const air=VEH[v.kind].mode==='air';
+  RIDE.manual=on; for(const k in DRIVE) DRIVE[k]=false; v.route=null; v.target=null; v.turnPref=null;
+  if(on&&air){ if(!FPV_ON){ FPV_ON=true; lsSet('mhk-fpv','1'); } fpvCamera(v,now(),0); RIDE.fly={x:FP.x,y:FP.y,z:FP.z,a:FP.a,vel:v.kind==='airplane'?4:0.5,steer:0}; }
+  else RIDE.fly=null;
+  if(on&&!air&&!FPV_ON){ cam.focus=v; cam.zoom=1.8; }
+  $('#stage').classList.toggle('manual',on); setRideBar(); }
 function updateVehicles(dt){
   const t=now();
+  if(RIDE&&RIDE.manual&&RIDE.fly) flyManual(dt);
   for(const v of vehicles.values()){
     const spec=VEH[v.kind]; if(!spec||spec.mode==='air') continue;
+    if(RIDE&&RIDE.manual&&RIDE.vid===v.id){ manualDrive(v,spec,dt,t); continue; }
     if(v.wait>0){ v.wait-=dt; continue; }
     const ridden=!!(RIDE&&RIDE.vid===v.id);
     if(!v.to){ const hadRoute=!!(v.route&&v.route.length); const n=vehNext(v);
@@ -1900,6 +1951,7 @@ function drawSkyVehicles(t,lights){
   for(const v of vehicles.values()){
     if(VEH[v.kind].mode!=='air') continue; if(!b){ b=islandBounds(); w=b.x1-b.x0; }
     const rd=riderLook(v);
+    if(rd&&RIDE.fly){ const F=RIDE.fly; const p=P(F.x,F.y,F.z*36); v.sp=p; if(v.kind==='airplane') drawPlaneAt(p[0],p[1],1.6,v.color,rd,lights); else drawBalloonAt(p[0],p[1],1,v.color,rd,t,v.phase,lights); continue; }
     if(v.kind==='airplane'){ const c=((t+v.phase)%26)/26; if(c>0.38&&!rd){ v.sp=null; continue; } const k=rd?((t*0.045+v.phase)%1):c/0.38;
       const x=b.x0-80+k*(w+160), y=b.y0+20-Math.sin(k*Math.PI)*24+((hashStr(v.id)%5)*8);
       ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(x-12,y+1); ctx.lineTo(Math.max(b.x0-80,x-150),y+1+Math.sin(k*Math.PI)*6); ctx.stroke();
@@ -1973,12 +2025,12 @@ function drawRider(v,x,y,headZ,sc,t,clip){ const lk=riderLook(v); if(!lk) return
 function meWalker(){ return walkers.get(VIEW?'g:self':'me'); }
 function startRide(v){ const w=meWalker(); if(!w||!v) return; if(RIDE) endRide(true);
   const from={x:w.x,y:w.y}; resetWalker(w); w.mode='ride'; w.hidden=true; w.path=[]; w.goal=null;
-  RIDE={vid:v.id,wid:w.id,look:w.look,from}; RIDE_OFFER=null;
+  RIDE={vid:v.id,wid:w.id,look:w.look,from,manual:false}; $('#stage').classList.remove('manual'); RIDE_OFFER=null;
   if(VEH[v.kind].mode!=='air'){ v.wait=Math.max(v.wait,0.5); v.vel=0; v.bubble={text:pick(Math.random,['しゅっぱーつ！','いってきます！','のりこめ〜']),until:now()+2}; }
   clearTimeout(focusOn.tm); cam.panX=0; cam.panY=0; FP.a=null;
   if(VEH[v.kind].mode==='air'){ cam.focus=null; cam.zoom=0.85; } else { cam.focus=v; cam.zoom=1.8; }
   setRideBar(); }
-function endRide(quiet){ if(!RIDE) return; const v=vehicles.get(RIDE.vid), w=walkers.get(RIDE.wid), from=RIDE.from; RIDE=null;
+function endRide(quiet){ if(!RIDE) return; $('#stage').classList.remove('manual'); for(const k in DRIVE) DRIVE[k]=false; const v=vehicles.get(RIDE.vid), w=walkers.get(RIDE.wid), from=RIDE.from; RIDE=null;
   if(v){ v.route=null; v.last=false; v.target=null; }
   if(w){ w.mode='wander'; w.hidden=false; w.path=[]; w.goal=null; w.wait=0.8;
     const spec=v&&VEH[v.kind];
@@ -2003,25 +2055,31 @@ function routeTo(v,best){ const z=tzAt(v.x,v.y);
   effects.push({type:'ring',x:best[0]+0.5,y:best[1]+0.5,t0:now(),life:1.2});
   if(!route.length&&!v.to){ v.bubble={text:'もう着いてるよ',until:now()+1.6}; } else v.bubble={text:pick(Math.random,['了解！','しゅっぱつ！','まかせて']),until:now()+1.6};
   setRideBar(); return true; }
-function rideSpeed(v){ const sp=VEH[v.kind]; if(sp.mode==='air') return sp.kmh; return Math.round((v.vel||0)/sp.speed*sp.kmh*(v.wait>0?0:1)); }
+function rideSpeed(v){ const sp=VEH[v.kind]; if(sp.mode==='air'){ if(RIDE&&RIDE.fly&&RIDE.vid===v.id) return Math.round(v.kind==='airplane'?RIDE.fly.vel/8*900:RIDE.fly.vel/1.3*15); return sp.kmh; } return Math.round((v.vel||0)/sp.speed*sp.kmh*(v.wait>0?0:1)); }
 function setRideBar(){ const bar=$('#rideBar'); if(!bar) return;
   if(RIDE){ const v=vehicles.get(RIDE.vid); if(!v){ bar.hidden=true; return; } const sp=VEH[v.kind];
     $('#rideTxt').textContent=sp.mode==='air'?`${sp.name}で空の旅`:`${sp.name}に乗っています`;
     $('#rideHint').textContent=sp.mode==='air'?(NET.code?'行き先をえらぶと、友だちの町へ飛んでいけます':'空から町を見おろそう'):(v.route&&v.route.length||v.target&&v.to)?'目的地に向かっています':(sp.mode==='water'?'水の上をタップすると、そこへ向かいます':'道をタップすると、そこへ運転します');
     $('#rideGo').hidden=true; $('#rideOff').hidden=false; $('#rideSpd').hidden=false; $('#rideView').hidden=false; bar.hidden=false;
-    const fc=$('#rideCtl'); fc.hidden=!(FPV_ON&&sp.mode!=='air'); for(const b of fc.querySelectorAll('[data-turn]')) b.classList.toggle('on',v.turnPref===b.dataset.turn);
+    const man=!!RIDE.manual, air=sp.mode==='air'; $('#rideMode').hidden=false; $('#rideMode').textContent=man?'自動にもどす':'操縦する'; $('#rideMode').classList.toggle('on',man);
+    const pad=$('#drivePad'); pad.hidden=!man; if(man){ $('#padUp').innerHTML=air?'▲<small>上昇</small>':'▲<small>アクセル</small>'; $('#padDown').innerHTML=air?'▼<small>下降</small>':'▼<small>ブレーキ</small>';
+      $('#padX1').hidden=air&&v.kind!=='airplane'; $('#padX1').textContent=air?'加速':'Uターン'; $('#padX2').hidden=!air; $('#padX2').textContent=v.kind==='airplane'?'減速':'風にのる';
+      if(v.kind==='balloon'){ $('#padX1').hidden=true; $('#padX2').textContent='風にのる'; }
+      for(const b of pad.querySelectorAll('[data-k=left],[data-k=right]')) b.classList.toggle('on',!air&&v.turnPref===(b.dataset.k==='left'?'L':'R')); }
+    const fc=$('#rideCtl'); fc.hidden=man||!(FPV_ON&&sp.mode!=='air'); for(const b of fc.querySelectorAll('[data-turn]')) b.classList.toggle('on',v.turnPref===b.dataset.turn);
     $('#rideView').textContent=FPV_ON?'上から見る':'運転席から見る';
     if(FPV_ON&&sp.mode!=='air') $('#rideHint').textContent=v.route&&v.route.length?'目的地に向かっています':'矢印で曲がる方向、道をタップで行き先';
+    if(man) $('#rideHint').textContent=air?'◀▶で旋回、▲▼で高さを変えられます':'▲で進む・▼で止まる・◀▶で次の角を曲がる';
     const dl=$('#rideDest'); if(sp.mode==='air'){ const ds=flyDests(); const key=ds.map(d=>(d.uid||'home')+d.name).join('|');
       if(dl.dataset.key!==key){ dl.dataset.key=key; dl.innerHTML=ds.length?ds.map((d,i)=>`<button class="rbtn fly" type="button" data-i="${i}">${d.castle?'果ての城へ':d.home?'自分の町へ帰る':esc(d.name)+'の町へ'}</button>`).join(''):'<span class="nofly">友だちとつながると友だちの町へ、虹の橋がかかると果ての城へ飛んでいけます</span>'; dl._d=ds; }
       dl.hidden=false; } else { dl.hidden=true; dl.dataset.key=''; }
     return; }
   const o=RIDE_OFFER&&now()<RIDE_OFFER.until?vehicles.get(RIDE_OFFER.vid):null;
   if(o){ const sp=VEH[o.kind]; $('#rideTxt').textContent=`${sp.name}（最高 時速${sp.kmh}km）`; $('#rideHint').textContent=sp.mode==='air'?'乗ると空を飛んで、友だちの町にも行けます':'乗ると、行き先を選んで運転できます';
-    $('#rideGo').textContent=`${sp.name}に乗る`; $('#rideGo').hidden=false; $('#rideOff').hidden=true; $('#rideSpd').hidden=true; $('#rideDest').hidden=true; $('#rideCtl').hidden=true; $('#rideView').hidden=true; bar.hidden=false; return; }
-  RIDE_OFFER=null; bar.hidden=true; $('#rideDest').hidden=true; $('#rideCtl').hidden=true; }
+    $('#rideGo').textContent=`${sp.name}に乗る`; $('#rideGo').hidden=false; $('#rideOff').hidden=true; $('#rideSpd').hidden=true; $('#rideDest').hidden=true; $('#rideCtl').hidden=true; $('#rideView').hidden=true; $('#rideMode').hidden=true; $('#drivePad').hidden=true; bar.hidden=false; return; }
+  RIDE_OFFER=null; bar.hidden=true; $('#rideDest').hidden=true; $('#rideCtl').hidden=true; $('#drivePad').hidden=true; }
 function rideTick(t){ if(RIDE){ const v=vehicles.get(RIDE.vid), w=walkers.get(RIDE.wid); if(!v||!w||w.mode!=='ride'){ RIDE=null; if(w&&w.mode==='ride'){ w.mode='wander'; w.hidden=false; } cam.focus=null; setRideBar(); return; }
-    w.x=v.x; w.y=v.y; if(!(rideTick.n>t)){ rideTick.n=t+0.2; $('#rideSpd').textContent=`時速 ${rideSpeed(v)}km`; } }
+    if(RIDE.fly){ RIDE.from={x:RIDE.fly.x,y:RIDE.fly.y}; } else { w.x=v.x; w.y=v.y; } if(!(rideTick.n>t)){ rideTick.n=t+0.2; $('#rideSpd').textContent=`時速 ${rideSpeed(v)}km`; } }
   else if(RIDE_OFFER&&now()>RIDE_OFFER.until) setRideBar(); }
 
 /* ---- first-person view while riding: the town seen from the driver's seat ---- */
@@ -2036,6 +2094,7 @@ function fpIsland(){ const n=Object.keys(S.tiles).length; if(FP.cache&&FP.cache.
   const c={x:sx/Math.max(1,n),y:sy/Math.max(1,n)}; let r=1; for(const k of ks){ const [x,y]=k.split(',').map(Number); r=Math.max(r,Math.hypot(x+0.5-c.x,y+0.5-c.y)); }
   FP.cache={n,S,x:c.x,y:c.y,r}; return FP.cache; }
 function fpvCamera(v,t,dt){ const sp=VEH[v.kind];
+  if(sp.mode==='air'&&RIDE&&RIDE.fly){ const F=RIDE.fly; FP.x=F.x; FP.y=F.y; FP.z=F.z; FP.a=F.a; FP.steer=F.steer; return; }
   if(sp.mode==='air'){ const c=fpIsland();
     if(v.kind==='airplane'){ const ang=t*0.06+v.phase, R=c.r+6; FP.x=c.x+Math.cos(ang)*R; FP.y=c.y+Math.sin(ang)*R; FP.z=4.6+Math.sin(t*0.4)*0.3; FP.a=ang+Math.PI-0.45; FP.steer=Math.sin(t*0.4)*0.15; }
     else { const ang=t*0.03+v.phase, R=c.r*0.55+2.5; FP.x=c.x+Math.cos(ang)*R; FP.y=c.y+Math.sin(ang)*R; FP.z=3+Math.sin(t*0.25)*0.35; FP.a=ang+Math.PI-0.3; FP.steer=0; }
@@ -3803,6 +3862,18 @@ cv.addEventListener('wheel',e=>{ e.preventDefault(); cam.zoom=Math.max(0.5,Math.
 $('#roomClose').onclick=closeRoom;
 $('#rideGo').onclick=()=>{ const v=RIDE_OFFER&&vehicles.get(RIDE_OFFER.vid); if(v) startRide(v); };
 $('#rideOff').onclick=()=>endRide(false);
+$('#rideMode').onclick=()=>setManual(!(RIDE&&RIDE.manual));
+{ const pad=$('#drivePad'); const keyOf=b=>b.dataset.k||(b.id==='padX2'?'slow':b.id==='padX1'?'x1':null);
+  const press=(b,on)=>{ const k=keyOf(b); if(!k||!RIDE) return; b.classList.toggle('press',on); const v=vehicles.get(RIDE.vid); const air=v&&VEH[v.kind].mode==='air';
+    if(k==='x1'){ if(on){ if(air) DRIVE.fast=true; else if(v){ v.uturn=true; v.turnPref=null; } } else DRIVE.fast=false; return; }
+    if(k==='slow'){ if(v&&v.kind==='balloon') DRIVE.fast=on; else DRIVE.slow=on; return; } DRIVE[k]=on; };
+  pad.addEventListener('pointerdown',e=>{ const b=e.target.closest('button'); if(!b) return; e.preventDefault(); e.stopPropagation(); try{ b.setPointerCapture(e.pointerId); }catch(_){} press(b,true); });
+  for(const ev of ['pointerup','pointercancel','lostpointercapture']) pad.addEventListener(ev,e=>{ const b=e.target.closest('button'); if(b) press(b,false); });
+  pad.addEventListener('contextmenu',e=>e.preventDefault());
+  const KM={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',z:'fast',Z:'fast',x:'slow',X:'slow'};
+  const keyh=on=>e=>{ if(!RIDE||!RIDE.manual||/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||'')) return; if(e.key==='u'||e.key==='U'){ if(on){ const v=vehicles.get(RIDE.vid); if(v){ v.uturn=true; v.turnPref=null; } } e.preventDefault(); return; }
+    const k=KM[e.key]; if(!k) return; e.preventDefault(); DRIVE[k]=on; };
+  document.addEventListener('keydown',keyh(true)); document.addEventListener('keyup',keyh(false)); addEventListener('blur',()=>{ for(const k in DRIVE) DRIVE[k]=false; }); }
 $('#rideCtl').onclick=e=>{ const b=e.target.closest('[data-turn]'); if(!b||!RIDE) return; const v=vehicles.get(RIDE.vid); if(!v) return; v.turnPref=v.turnPref===b.dataset.turn?null:b.dataset.turn; v.route=null; v.target=null; setRideBar(); };
 $('#rideView').onclick=()=>{ FPV_ON=!FPV_ON; lsSet('mhk-fpv',FPV_ON?'1':'0'); const v=RIDE&&vehicles.get(RIDE.vid); if(v&&VEH[v.kind].mode!=='air'){ cam.focus=v; cam.zoom=1.8; } setRideBar(); };
 $('#rideDest').onclick=e=>{ const b=e.target.closest('[data-i]'); const dl=$('#rideDest'); if(b&&dl._d) flyTo(dl._d[+b.dataset.i]); };
@@ -4104,7 +4175,7 @@ const QR = (() => {
 // Each phone publishes a small snapshot (avatar + town, never the diary text) to a room named by
 // the invite code. Friends in the same room appear in each other's towns and can trade stamps.
 const PUBLIC_URL='https://koukis150225-create.github.io/mouhitori-hakoniwa/';
-const APP_VERSION='2026.10.05d';
+const APP_VERSION='2026.10.05e';
 const BROKER='wss://broker.emqx.io:8084/mqtt';
 const MQTT_SRC=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
