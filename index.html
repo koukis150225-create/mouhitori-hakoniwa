@@ -4073,6 +4073,7 @@ const typingNow=()=>{ const a=document.activeElement; return !!a&&(a.tagName==='
 const rpgBlocked=()=>!!(GAME||room||RIDE||FLIGHT||SPACE||DECO_MODE||STORY||!$('#rpg').hidden||!$('#creator').hidden||document.hidden);
 function rpgTick(dt,t){ if(!HERO) return;
   if($('#rpg').hidden){ rpgTick.r=(rpgTick.r||0)+dt; if(rpgTick.r>=6){ rpgTick.r=0; let ch=false; if(HERO.hp<hMaxHp()){ HERO.hp++; ch=true; } rpgTick.m=(rpgTick.m||0)+1; if(rpgTick.m>=3&&HERO.mp<hMaxMp()){ rpgTick.m=0; HERO.mp++; ch=true; } if(ch){ heroDirty=true; renderHero(); } } }
+  rpgTick.u=(rpgTick.u||0)+dt; if(rpgTick.u>1){ rpgTick.u=0; renderHero(); }
   rpgTick.s=(rpgTick.s||0)+dt; if(rpgTick.s>30){ rpgTick.s=0; if(heroDirty) saveHero(); }
   if(!monAllowed()){ if(MONS.length) MONS.length=0; return; }
   if(room||FLIGHT||!$('#rpg').hidden) return;
@@ -4137,7 +4138,7 @@ function cmdButtons(list){ const box=$('#rpgCmd'); box.innerHTML=''; for(const [
 function statHTML(){ const hp=HERO.hp/hMaxHp(), mp=HERO.mp/hMaxMp();
   return `<span class="lv">Lv${HERO.lv}</span><span class="bar"><i class="hp" style="width:${Math.round(hp*100)}%"></i></span><span class="num">体力 ${HERO.hp}/${hMaxHp()}</span><span class="bar"><i class="mp" style="width:${Math.round(mp*100)}%"></i></span><span class="num">魔力 ${HERO.mp}/${hMaxMp()}</span><span class="coin">${HERO.coins}コイン</span>`; }
 let heroSig='';
-function renderHero(){ if(!HERO) return; const sig=[HERO.lv,HERO.hp,HERO.mp,HERO.coins,HERO.exp,HERO.weapon,HERO.armor,HERO.mon,JSON.stringify(HERO.items),RMODE].join('|'); if(sig===heroSig) return; heroSig=sig;
+function renderHero(){ if(!HERO) return; const sig=[E.length,HERO.lv,HERO.hp,HERO.mp,HERO.coins,HERO.exp,HERO.weapon,HERO.armor,HERO.mon,JSON.stringify(HERO.items),RMODE].join('|'); if(sig===heroSig) return; heroSig=sig;
   const hud=$('#hudHero'); if(hud){ hud.hidden=!E.length; hud.innerHTML=`<b>Lv${HERO.lv}</b><span class="bar"><i class="hp" style="width:${Math.round(HERO.hp/hMaxHp()*100)}%"></i></span><span class="bar"><i class="mp" style="width:${Math.round(HERO.mp/hMaxMp()*100)}%"></i></span><span>${HERO.coins}c</span>`; }
   const st=$('#rpgStat'); if(st&&RMODE) st.innerHTML=statHTML();
   const a=$('#advStat'); if(a){ a.innerHTML=statHTML()+`<span class="eq">そうび：${hW().name}・${hA().name}　つぎのレベルまで ${hNeed(HERO.lv)-HERO.exp}</span>`; }
@@ -4949,7 +4950,7 @@ const QR = (() => {
 // Each phone publishes a small snapshot (avatar + town, never the diary text) to a room named by
 // the invite code. Friends in the same room appear in each other's towns and can trade stamps.
 const PUBLIC_URL='https://koukis150225-create.github.io/mouhitori-hakoniwa/';
-const APP_VERSION='2026.10.06a';
+const APP_VERSION='2026.10.06b';
 const BROKER='wss://broker.emqx.io:8084/mqtt';
 const MQTT_SRC=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
